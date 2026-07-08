@@ -139,7 +139,7 @@
               <textarea v-model.trim="questionForm.question" placeholder="例如：帮我总结本课程资料中对课程项目的要求"></textarea>
             </label>
             <button class="button primary" type="submit" :disabled="sendingQuestion || !agent || agent.status === 'disabled'">
-              {{ sendingQuestion ? '发送中' : agent?.status === 'disabled' ? 'Agent 已停用' : '发送问题' }}
+              {{ sendingQuestion ? '流式发送中' : agent?.status === 'disabled' ? 'Agent 已停用' : '发送问题' }}
             </button>
           </form>
         </div>
@@ -155,14 +155,16 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import {
-  askCourseAgent,
   createAgentConversation,
   getAgentConversation,
   getCourseAgent,
   listAgentConversations,
+  streamCourseAgent,
   updateCourseAgent,
 } from '@/api/agent'
 import type {
+  AgentMessageSourceVO,
+  AgentMessageVO,
   AgentConversationDetailVO,
   AgentConversationVO,
   AgentStatus,
@@ -330,15 +332,27 @@ async function submitQuestion() {
   if (!question) return
   sendingQuestion.value = true
   chatError.value = ''
+  const rollback = snapshotMessages()
   try {
     const conversationId = await ensureConversationId()
-    await askCourseAgent(props.token, props.courseId, {
+    const { agentMessage } = appendLocalMessages(conversationId, question)
+    questionForm.question = ''
+    await streamCourseAgent(props.token, props.courseId, {
       conversationId,
       question,
+    }, {
+      onDelta: ({ content }) => {
+        agentMessage.messageContent += content
+      },
+      onComplete: ({ answer, sources, tokenUsage }) => {
+        agentMessage.messageContent = answer || agentMessage.messageContent
+        agentMessage.sources = sources
+        agentMessage.tokenUsage = tokenUsage
+      },
     })
-    questionForm.question = ''
     await Promise.all([reloadConversation(), reloadConversations()])
   } catch (error) {
+    rollback()
     chatError.value = error instanceof Error ? error.message : '提问失败'
   } finally {
     sendingQuestion.value = false
@@ -350,6 +364,67 @@ async function reloadConversations() {
     conversations.value = await listAgentConversations(props.token, props.courseId)
   } catch (error) {
     conversationError.value = error instanceof Error ? error.message : '会话列表刷新失败'
+  }
+}
+
+function ensureConversationDetail(conversationId: number) {
+  if (selectedConversationDetail.value?.conversation.id === conversationId) {
+    return selectedConversationDetail.value
+  }
+  const baseConversation = conversations.value.find((item) => item.id === conversationId) ?? {
+    id: conversationId,
+    courseId: props.courseId,
+    agentId: agent.value?.id ?? 0,
+    userId: 0,
+    conversationTitle: '新会话',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+  selectedConversationDetail.value = {
+    conversation: { ...baseConversation },
+    messages: [],
+  }
+  selectedConversationId.value = conversationId
+  return selectedConversationDetail.value
+}
+
+function appendLocalMessages(conversationId: number, question: string) {
+  const detail = ensureConversationDetail(conversationId)
+  const timestamp = new Date().toISOString()
+  const seed = Date.now()
+  const userMessage: AgentMessageVO = {
+    id: seed,
+    conversationId,
+    senderType: 'user',
+    messageContent: question,
+    tokenUsage: 0,
+    createdAt: timestamp,
+  }
+  const agentMessage: AgentMessageVO = {
+    id: seed + 1,
+    conversationId,
+    senderType: 'agent',
+    messageContent: '',
+    tokenUsage: 0,
+    createdAt: timestamp,
+    sources: [] as AgentMessageSourceVO[],
+  }
+  detail.messages = [...detail.messages, userMessage, agentMessage]
+  return { agentMessage }
+}
+
+function snapshotMessages() {
+  const previousDetail = selectedConversationDetail.value
+    ? {
+        conversation: { ...selectedConversationDetail.value.conversation },
+        messages: selectedConversationDetail.value.messages.map((message) => ({
+          ...message,
+          sources: message.sources?.map((source) => ({ ...source })),
+        })),
+      }
+    : null
+  return () => {
+    selectedConversationDetail.value = previousDetail
   }
 }
 </script>

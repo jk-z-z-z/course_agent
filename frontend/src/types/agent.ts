@@ -70,3 +70,13 @@ export interface AgentAskResultVO {
   answer: string
   sources: AgentMessageSourceVO[]
 }
+
+export interface CourseAgentStreamDeltaEvent {
+  content: string
+}
+
+export interface CourseAgentStreamCompleteEvent {
+  answer: string
+  sources: AgentMessageSourceVO[]
+  tokenUsage: number
+}
