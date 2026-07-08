@@ -1,0 +1,16 @@
+server:
+  host: 0.0.0.0
+  port: 8080
+  mode: debug
+
+mysql:
+  host: 127.0.0.1
+  port: 3306
+  username: course_agent
+  password: course_agent
+  database: course_agent
+
+redis:
+  addr: 127.0.0.1:6379
+  password: ""
+  db: 0

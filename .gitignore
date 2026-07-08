@@ -16,6 +16,9 @@ logs/
 .env.*
 !.env.example
 
+# Backend runtime config
+backend/configs/config.yaml
+
 # Frontend
 frontend/node_modules/
 frontend/dist/

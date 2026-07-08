@@ -1,24 +1,57 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"syscall"
+	"time"
+
+	"course_agent_backend/internal/bootstrap"
+	"course_agent_backend/internal/config"
 )
 
 func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("ok"))
-	})
-
-	server := &http.Server{
-		Addr:    ":8080",
-		Handler: mux,
+	cfgPath := os.Getenv("APP_CONFIG")
+	if cfgPath == "" {
+		cfgPath = filepath.Join("configs", "config.yaml")
 	}
 
-	log.Println("backend listening on :8080")
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		log.Fatal(err)
+	cfg, err := config.Load(cfgPath)
+	if err != nil {
+		log.Fatalf("load config failed: %v", err)
+	}
+
+	app, err := bootstrap.New(cfg)
+	if err != nil {
+		log.Fatalf("bootstrap failed: %v", err)
+	}
+	defer func() {
+		if closeErr := app.Close(); closeErr != nil {
+			log.Printf("shutdown close error: %v", closeErr)
+		}
+	}()
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	go func() {
+		log.Printf("backend listening on %s", app.Server.Addr)
+		if serveErr := app.Server.ListenAndServe(); serveErr != nil && !errors.Is(serveErr, http.ErrServerClosed) {
+			log.Printf("http server stopped: %v", serveErr)
+			stop()
+		}
+	}()
+
+	<-ctx.Done()
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := app.Server.Shutdown(shutdownCtx); err != nil {
+		log.Printf("server shutdown error: %v", err)
 	}
 }
