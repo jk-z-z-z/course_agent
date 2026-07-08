@@ -18,13 +18,16 @@
         <div class="sidebar-section">
           <div class="section-head">
             <p class="label">我的课程</p>
-            <button class="button ghost compact" @click="reloadCourses" :disabled="loadingCourses">
-              {{ loadingCourses ? '刷新中' : '刷新' }}
-            </button>
+            <div class="inline-actions">
+              <button class="button primary compact" @click="openCreateDialog">新建课程</button>
+              <button class="button ghost compact" @click="reloadCourses" :disabled="loadingCourses">
+                {{ loadingCourses ? '刷新中' : '刷新' }}
+              </button>
+            </div>
           </div>
 
           <p v-if="courseError" class="error">{{ courseError }}</p>
-          <p v-else-if="!courses.length && !loadingCourses" class="muted-copy">暂无课程，下一步可以直接创建课程。</p>
+          <p v-else-if="!courses.length && !loadingCourses" class="muted-copy">暂无课程，先创建一门课程开始使用。</p>
 
           <button
             v-for="course in courses"
@@ -47,7 +50,13 @@
                 <p class="eyebrow">{{ selectedCourse.courseCode }}</p>
                 <h2>{{ selectedCourse.courseName }}</h2>
               </div>
-              <span class="pill">{{ roleLabel(selectedCourse.myRole) }}</span>
+              <div class="inline-actions">
+                <span class="pill">{{ roleLabel(selectedCourse.myRole) }}</span>
+                <button v-if="canEditCourse" class="button ghost compact" @click="openEditDialog">编辑课程</button>
+                <button v-if="canDeleteCourse" class="button danger compact" @click="handleDeleteCourse" :disabled="savingCourse">
+                  {{ savingCourse ? '处理中' : '删除课程' }}
+                </button>
+              </div>
             </div>
 
             <p class="lead detail-copy">
@@ -111,13 +120,48 @@
         </article>
       </section>
     </section>
+
+    <div v-if="courseDialog.open" class="modal-backdrop" @click.self="closeCourseDialog">
+      <section class="modal-card card">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">{{ courseDialog.mode === 'create' ? 'Create Course' : 'Edit Course' }}</p>
+            <h3>{{ courseDialog.mode === 'create' ? '新建课程' : '编辑课程' }}</h3>
+          </div>
+          <button class="button ghost compact" @click="closeCourseDialog">关闭</button>
+        </div>
+
+        <form class="form" @submit.prevent="submitCourseForm">
+          <label class="field">
+            <span>课程编号</span>
+            <input v-model.trim="courseForm.courseCode" type="text" :disabled="courseDialog.mode === 'edit'" />
+          </label>
+
+          <label class="field">
+            <span>课程名称</span>
+            <input v-model.trim="courseForm.courseName" type="text" />
+          </label>
+
+          <label class="field">
+            <span>课程简介</span>
+            <textarea v-model.trim="courseForm.courseDescription"></textarea>
+          </label>
+
+          <p v-if="courseFormError" class="error">{{ courseFormError }}</p>
+
+          <button class="button primary" type="submit" :disabled="savingCourse">
+            {{ savingCourse ? '提交中...' : courseDialog.mode === 'create' ? '创建课程' : '保存修改' }}
+          </button>
+        </form>
+      </section>
+    </div>
   </main>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { getCourse, listCourseMembers, listCourses } from '@/api/course'
+import { createCourse, deleteCourse, getCourse, listCourseMembers, listCourses, updateCourse } from '@/api/course'
 import { logout } from '@/api/user'
 import { useAuth } from '@/composables/useAuth'
 import type { CourseMemberVO, CourseRole, CourseStatus, CourseVO } from '@/types/course'
@@ -130,12 +174,25 @@ const courses = ref<CourseVO[]>([])
 const members = ref<CourseMemberVO[]>([])
 const loadingCourses = ref(false)
 const loadingMembers = ref(false)
+const savingCourse = ref(false)
 const courseError = ref('')
 const memberError = ref('')
+const courseFormError = ref('')
 const selectedCourseId = ref<number | null>(null)
 const selectedCourse = ref<CourseVO | null>(null)
+const courseDialog = reactive({
+  open: false,
+  mode: 'create' as 'create' | 'edit',
+})
+const courseForm = reactive({
+  courseCode: '',
+  courseName: '',
+  courseDescription: '',
+})
 
 const token = computed(() => auth.token.value)
+const canEditCourse = computed(() => selectedCourse.value?.myRole === 'owner' || selectedCourse.value?.myRole === 'teacher')
+const canDeleteCourse = computed(() => selectedCourse.value?.myRole === 'owner')
 
 async function loadCourses() {
   if (!token.value) return
@@ -197,6 +254,83 @@ async function reloadCourses() {
 async function reloadMembers() {
   if (!selectedCourseId.value) return
   await loadMembers(selectedCourseId.value)
+}
+
+function openCreateDialog() {
+  courseDialog.open = true
+  courseDialog.mode = 'create'
+  courseFormError.value = ''
+  courseForm.courseCode = ''
+  courseForm.courseName = ''
+  courseForm.courseDescription = ''
+}
+
+function openEditDialog() {
+  if (!selectedCourse.value) return
+  courseDialog.open = true
+  courseDialog.mode = 'edit'
+  courseFormError.value = ''
+  courseForm.courseCode = selectedCourse.value.courseCode
+  courseForm.courseName = selectedCourse.value.courseName
+  courseForm.courseDescription = selectedCourse.value.courseDescription
+}
+
+function closeCourseDialog() {
+  if (savingCourse.value) return
+  courseDialog.open = false
+  courseFormError.value = ''
+}
+
+async function submitCourseForm() {
+  if (!token.value) return
+  savingCourse.value = true
+  courseFormError.value = ''
+  try {
+    if (courseDialog.mode === 'create') {
+      const created = await createCourse(token.value, {
+        courseCode: courseForm.courseCode,
+        courseName: courseForm.courseName,
+        courseDescription: courseForm.courseDescription,
+      })
+      courseDialog.open = false
+      await loadCourses()
+      await selectCourse(created.id)
+      return
+    }
+
+    if (!selectedCourseId.value) return
+    const updated = await updateCourse(token.value, selectedCourseId.value, {
+      courseName: courseForm.courseName,
+      courseDescription: courseForm.courseDescription,
+    })
+    selectedCourse.value = updated
+    courseDialog.open = false
+    await loadCourses()
+  } catch (error) {
+    courseFormError.value = error instanceof Error ? error.message : '课程保存失败'
+  } finally {
+    savingCourse.value = false
+  }
+}
+
+async function handleDeleteCourse() {
+  if (!token.value || !selectedCourseId.value || !selectedCourse.value) return
+  const confirmed = window.confirm(`确认删除课程“${selectedCourse.value.courseName}”吗？`)
+  if (!confirmed) return
+
+  savingCourse.value = true
+  courseError.value = ''
+  try {
+    await deleteCourse(token.value, selectedCourseId.value)
+    selectedCourseId.value = null
+    selectedCourse.value = null
+    members.value = []
+    await loadCourses()
+  } catch (error) {
+    courseError.value = error instanceof Error ? error.message : '课程删除失败'
+  } finally {
+    savingCourse.value = false
+  }
 }
 
 async function handleLogout() {
