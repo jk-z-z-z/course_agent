@@ -53,7 +53,10 @@ func New(userHandler *handler.UserHandler, courseHandler *handler.CourseHandler,
 		courses.DELETE("/:courseId/members/:memberId", courseHandler.DeleteMember)
 		courses.GET("/:courseId/materials/tree", materialHandler.GetTree)
 		courses.POST("/:courseId/materials/folders", materialHandler.CreateFolder)
+		courses.POST("/:courseId/materials/upload", materialHandler.UploadFile)
 		courses.GET("/:courseId/materials/:nodeId", materialHandler.GetDetail)
+		courses.GET("/:courseId/materials/:nodeId/preview", materialHandler.PreviewFile)
+		courses.GET("/:courseId/materials/:nodeId/download", materialHandler.DownloadFile)
 		courses.PUT("/:courseId/materials/:nodeId", materialHandler.UpdateNode)
 		courses.DELETE("/:courseId/materials/:nodeId", materialHandler.DeleteNode)
 	}

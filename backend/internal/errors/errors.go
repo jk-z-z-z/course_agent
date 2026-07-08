@@ -24,6 +24,7 @@ var (
 	ErrCourseExists     = New(40003, "课程编号已存在")
 	ErrCourseMemberExists   = New(40004, "课程成员已存在")
 	ErrMaterialExists       = New(40005, "资料节点已存在")
+	ErrStorageQuotaExceeded = New(40006, "资料空间容量不足")
 	ErrUserNotFound     = New(43001, "用户不存在")
 	ErrCourseNotFound   = New(43002, "课程不存在")
 	ErrCourseMemberNotFound = New(43003, "课程成员不存在")

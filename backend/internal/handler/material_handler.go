@@ -1,7 +1,10 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
+	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -140,6 +143,49 @@ func (h *MaterialHandler) DeleteNode(c *gin.Context) {
 	response.Success(c, nil)
 }
 
+func (h *MaterialHandler) UploadFile(c *gin.Context) {
+	courseID, ok := parseUintParam(c, "courseId")
+	if !ok {
+		response.Fail(c, http.StatusBadRequest, apperrors.ErrInvalidParameter.Code, apperrors.ErrInvalidParameter.Message)
+		return
+	}
+	userID, ok := authcontext.UserID(c.Request.Context())
+	if !ok || userID == 0 {
+		response.Fail(c, http.StatusUnauthorized, apperrors.ErrUnauthorized.Code, apperrors.ErrUnauthorized.Message)
+		return
+	}
+
+	var parentID *uint64
+	if rawParentID := strings.TrimSpace(c.PostForm("parentId")); rawParentID != "" {
+		if parsed, ok := parseUintString(rawParentID); ok {
+			parentID = &parsed
+		} else {
+			response.Fail(c, http.StatusBadRequest, apperrors.ErrInvalidParameter.Code, apperrors.ErrInvalidParameter.Message)
+			return
+		}
+	}
+
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, apperrors.ErrInvalidParameter.Code, apperrors.ErrInvalidParameter.Message)
+		return
+	}
+	data, err := h.service.UploadFile(c.Request.Context(), userID, courseID, parentID, fileHeader)
+	if err != nil {
+		h.writeError(c, err)
+		return
+	}
+	response.Success(c, data)
+}
+
+func (h *MaterialHandler) PreviewFile(c *gin.Context) {
+	h.serveFile(c, true)
+}
+
+func (h *MaterialHandler) DownloadFile(c *gin.Context) {
+	h.serveFile(c, false)
+}
+
 func (h *MaterialHandler) writeError(c *gin.Context, err error) {
 	if codeErr, ok := err.(*apperrors.CodeError); ok {
 		status := http.StatusBadRequest
@@ -155,4 +201,42 @@ func (h *MaterialHandler) writeError(c *gin.Context, err error) {
 		return
 	}
 	response.Fail(c, http.StatusInternalServerError, 50000, err.Error())
+}
+
+func (h *MaterialHandler) serveFile(c *gin.Context, inline bool) {
+	courseID, ok := parseUintParam(c, "courseId")
+	if !ok {
+		response.Fail(c, http.StatusBadRequest, apperrors.ErrInvalidParameter.Code, apperrors.ErrInvalidParameter.Message)
+		return
+	}
+	nodeID, ok := parseUintParam(c, "nodeId")
+	if !ok {
+		response.Fail(c, http.StatusBadRequest, apperrors.ErrInvalidParameter.Code, apperrors.ErrInvalidParameter.Message)
+		return
+	}
+	userID, ok := authcontext.UserID(c.Request.Context())
+	if !ok || userID == 0 {
+		response.Fail(c, http.StatusUnauthorized, apperrors.ErrUnauthorized.Code, apperrors.ErrUnauthorized.Message)
+		return
+	}
+	node, err := h.service.GetReadableFile(c.Request.Context(), userID, courseID, nodeID)
+	if err != nil {
+		h.writeError(c, err)
+		return
+	}
+	if inline {
+		c.Header("Content-Type", node.MimeType)
+		c.Header("Content-Disposition", fmt.Sprintf("inline; filename*=UTF-8''%s", url.PathEscape(node.NodeName)))
+		c.File(node.StoragePath)
+		return
+	}
+	c.FileAttachment(node.StoragePath, node.NodeName)
+}
+
+func parseUintString(value string) (uint64, bool) {
+	parsed, err := strconv.ParseUint(strings.TrimSpace(value), 10, 64)
+	if err != nil {
+		return 0, false
+	}
+	return parsed, true
 }

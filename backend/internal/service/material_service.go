@@ -3,7 +3,14 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io"
+	"mime"
+	"mime/multipart"
+	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -157,6 +164,153 @@ func (s *MaterialService) DeleteNode(ctx context.Context, userID, courseID, node
 	return s.materialRepo.UpdateNodes(ctx, toDelete)
 }
 
+func (s *MaterialService) UploadFile(ctx context.Context, userID, courseID uint64, parentID *uint64, fileHeader *multipart.FileHeader) (*vo.MaterialDetailVO, error) {
+	space, _, err := s.requireCourseManager(ctx, userID, courseID)
+	if err != nil {
+		return nil, err
+	}
+	if fileHeader == nil || fileHeader.Size <= 0 {
+		return nil, apperrors.ErrInvalidParameter
+	}
+	if space.QuotaBytes > 0 && space.UsedBytes+fileHeader.Size > space.QuotaBytes {
+		return nil, apperrors.ErrStorageQuotaExceeded
+	}
+
+	if parentID != nil {
+		parent, err := s.materialRepo.GetActiveNodeByID(ctx, courseID, *parentID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, apperrors.ErrMaterialNotFound
+			}
+			return nil, err
+		}
+		if parent.NodeType != "folder" {
+			return nil, apperrors.ErrInvalidParameter
+		}
+	}
+
+	originalName := strings.TrimSpace(filepath.Base(fileHeader.Filename))
+	if originalName == "" {
+		return nil, apperrors.ErrInvalidParameter
+	}
+
+	ext := strings.TrimPrefix(strings.ToLower(filepath.Ext(originalName)), ".")
+	mimeType := strings.TrimSpace(fileHeader.Header.Get("Content-Type"))
+	if mimeType == "" {
+		mimeType = mime.TypeByExtension(filepath.Ext(originalName))
+	}
+	if mimeType == "" {
+		mimeType = "application/octet-stream"
+	}
+
+	var existing *model.CourseMaterialNode
+	if node, err := s.materialRepo.GetNodeByParentAndName(ctx, courseID, parentID, originalName); err == nil {
+		if node.NodeType != "file" {
+			return nil, apperrors.ErrMaterialExists
+		}
+		existing = node
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	versionNo := 1
+	if existing != nil {
+		versionNo = existing.LatestVersionNo + 1
+	}
+
+	storageFileName := fmt.Sprintf("%d_%d_v%d%s", courseID, time.Now().UnixNano(), versionNo, filepath.Ext(originalName))
+	storagePath := filepath.Join(space.RootPath, storageFileName)
+	if err := os.MkdirAll(space.RootPath, 0o755); err != nil {
+		return nil, fmt.Errorf("ensure storage root: %w", err)
+	}
+	if err := saveUploadedFile(fileHeader, storagePath); err != nil {
+		return nil, err
+	}
+
+	var nodeResult *model.CourseMaterialNode
+	err = s.materialRepo.Transaction(ctx, func(tx *gorm.DB) error {
+		space.UsedBytes += fileHeader.Size
+		if err := s.materialRepo.UpdateStorageSpaceTx(tx, space); err != nil {
+			return err
+		}
+
+		if existing == nil {
+			node := &model.CourseMaterialNode{
+				CourseID:        courseID,
+				SpaceID:         space.ID,
+				ParentID:        parentID,
+				NodeType:        "file",
+				NodeName:        originalName,
+				FileExt:         ext,
+				StoragePath:     storagePath,
+				MimeType:        mimeType,
+				FileSize:        fileHeader.Size,
+				LatestVersionNo: versionNo,
+				SortIndex:       0,
+				CreatedBy:       userID,
+			}
+			if err := s.materialRepo.CreateNodeTx(tx, node); err != nil {
+				return err
+			}
+			existing = node
+		} else {
+			existing.FileExt = ext
+			existing.StoragePath = storagePath
+			existing.MimeType = mimeType
+			existing.FileSize = fileHeader.Size
+			existing.LatestVersionNo = versionNo
+			if err := s.materialRepo.UpdateNodeTx(tx, existing); err != nil {
+				return err
+			}
+		}
+
+		version := &model.CourseMaterialVersion{
+			MaterialNodeID: existing.ID,
+			VersionNo:      versionNo,
+			StoragePath:    storagePath,
+			FileSize:       fileHeader.Size,
+			MimeType:       mimeType,
+			UploadUserID:   userID,
+			CreatedAt:      time.Now(),
+		}
+		if err := s.materialRepo.CreateVersionTx(tx, version); err != nil {
+			return err
+		}
+		nodeResult = existing
+		return nil
+	})
+	if err != nil {
+		_ = os.Remove(storagePath)
+		return nil, err
+	}
+
+	result := toMaterialDetailVO(nodeResult)
+	return &result, nil
+}
+
+func (s *MaterialService) GetReadableFile(ctx context.Context, userID, courseID, nodeID uint64) (*model.CourseMaterialNode, error) {
+	if _, _, err := s.requireCourseMember(ctx, userID, courseID); err != nil {
+		return nil, err
+	}
+	node, err := s.materialRepo.GetActiveNodeByID(ctx, courseID, nodeID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperrors.ErrMaterialNotFound
+		}
+		return nil, err
+	}
+	if node.NodeType != "file" || strings.TrimSpace(node.StoragePath) == "" {
+		return nil, apperrors.ErrInvalidParameter
+	}
+	if _, err := os.Stat(node.StoragePath); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, apperrors.ErrMaterialNotFound
+		}
+		return nil, err
+	}
+	return node, nil
+}
+
 func (s *MaterialService) requireCourseMember(ctx context.Context, userID, courseID uint64) (*model.CourseStorageSpace, string, error) {
 	course, err := s.courseRepo.GetCourseByID(ctx, courseID)
 	if err != nil {
@@ -285,4 +439,23 @@ func toMaterialDetailVO(node *model.CourseMaterialNode) vo.MaterialDetailVO {
 		CreatedAt:       node.CreatedAt,
 		UpdatedAt:       node.UpdatedAt,
 	}
+}
+
+func saveUploadedFile(fileHeader *multipart.FileHeader, storagePath string) error {
+	src, err := fileHeader.Open()
+	if err != nil {
+		return fmt.Errorf("open uploaded file: %w", err)
+	}
+	defer src.Close()
+
+	dst, err := os.Create(storagePath)
+	if err != nil {
+		return fmt.Errorf("create storage file: %w", err)
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, src); err != nil {
+		return fmt.Errorf("write storage file: %w", err)
+	}
+	return nil
 }

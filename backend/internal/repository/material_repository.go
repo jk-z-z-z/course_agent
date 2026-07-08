@@ -44,12 +44,28 @@ func (r *MaterialRepository) CreateNode(ctx context.Context, node *model.CourseM
 	return r.db.WithContext(ctx).Create(node).Error
 }
 
+func (r *MaterialRepository) CreateNodeTx(tx *gorm.DB, node *model.CourseMaterialNode) error {
+	return tx.Create(node).Error
+}
+
 func (r *MaterialRepository) UpdateNode(ctx context.Context, node *model.CourseMaterialNode) error {
 	return r.db.WithContext(ctx).Save(node).Error
 }
 
+func (r *MaterialRepository) UpdateNodeTx(tx *gorm.DB, node *model.CourseMaterialNode) error {
+	return tx.Save(node).Error
+}
+
 func (r *MaterialRepository) CreateVersion(ctx context.Context, version *model.CourseMaterialVersion) error {
 	return r.db.WithContext(ctx).Create(version).Error
+}
+
+func (r *MaterialRepository) CreateVersionTx(tx *gorm.DB, version *model.CourseMaterialVersion) error {
+	return tx.Create(version).Error
+}
+
+func (r *MaterialRepository) UpdateStorageSpaceTx(tx *gorm.DB, space *model.CourseStorageSpace) error {
+	return tx.Save(space).Error
 }
 
 func (r *MaterialRepository) ListActiveNodesByCourseID(ctx context.Context, courseID uint64) ([]model.CourseMaterialNode, error) {
