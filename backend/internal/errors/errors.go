@@ -21,7 +21,11 @@ var (
 	ErrSessionExpired   = New(41002, "登录态已失效")
 	ErrForbidden        = New(42001, "无权限")
 	ErrUserExists       = New(40002, "用户名已存在")
+	ErrCourseExists     = New(40003, "课程编号已存在")
+	ErrCourseMemberExists   = New(40004, "课程成员已存在")
 	ErrUserNotFound     = New(43001, "用户不存在")
+	ErrCourseNotFound   = New(43002, "课程不存在")
+	ErrCourseMemberNotFound = New(43003, "课程成员不存在")
 	ErrUserDisabled     = New(44001, "用户已被禁用")
 )
 
