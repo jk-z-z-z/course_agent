@@ -41,6 +41,22 @@ type AskResponse struct {
 	TokenUsage int
 }
 
+type StreamEventType string
+
+const (
+	StreamEventDelta    StreamEventType = "delta"
+	StreamEventComplete StreamEventType = "complete"
+)
+
+type StreamEvent struct {
+	Type       StreamEventType
+	Content    string
+	Answer     string
+	Sources    []Source
+	TokenUsage int
+}
+
 type Client interface {
 	Ask(ctx context.Context, request AskRequest) (*AskResponse, error)
+	AskStream(ctx context.Context, request AskRequest, onEvent func(StreamEvent) error) (*AskResponse, error)
 }

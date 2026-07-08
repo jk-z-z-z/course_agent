@@ -14,7 +14,14 @@ type (
 	Source           = agenttypes.Source
 	AskRequest       = agenttypes.AskRequest
 	AskResponse      = agenttypes.AskResponse
+	StreamEventType  = agenttypes.StreamEventType
+	StreamEvent      = agenttypes.StreamEvent
 	Client           = agenttypes.Client
+)
+
+const (
+	StreamEventDelta    = agenttypes.StreamEventDelta
+	StreamEventComplete = agenttypes.StreamEventComplete
 )
 
 func NewClient(ctx context.Context, cfg Config) (Client, error) {

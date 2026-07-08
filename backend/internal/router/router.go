@@ -65,6 +65,7 @@ func New(userHandler *handler.UserHandler, courseHandler *handler.CourseHandler,
 		courses.GET("/:courseId/agent/conversations", agentHandler.ListConversations)
 		courses.GET("/:courseId/agent/conversations/:conversationId", agentHandler.GetConversation)
 		courses.POST("/:courseId/agent/ask", agentHandler.Ask)
+		courses.POST("/:courseId/agent/ask/stream", agentHandler.AskStream)
 	}
 
 	return r

@@ -184,6 +184,22 @@ func (s *AgentService) GetConversationDetail(ctx context.Context, userID, course
 }
 
 func (s *AgentService) Ask(ctx context.Context, userID, courseID, conversationID uint64, question string) (*vo.AgentAskResultVO, error) {
+	result, err := s.ask(ctx, userID, courseID, conversationID, question, nil)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *AgentService) AskStream(ctx context.Context, userID, courseID, conversationID uint64, question string, onEvent func(agentruntime.StreamEvent) error) (*vo.AgentAskResultVO, error) {
+	result, err := s.ask(ctx, userID, courseID, conversationID, question, onEvent)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *AgentService) ask(ctx context.Context, userID, courseID, conversationID uint64, question string, onEvent func(agentruntime.StreamEvent) error) (*vo.AgentAskResultVO, error) {
 	conversation, role, err := s.requireConversationAccess(ctx, userID, courseID, conversationID)
 	if err != nil {
 		return nil, err
@@ -230,13 +246,13 @@ func (s *AgentService) Ask(ctx context.Context, userID, courseID, conversationID
 		})
 	}
 
-	answer, err := s.runtime.Ask(ctx, agentruntime.AskRequest{
+	answer, err := s.runtime.AskStream(ctx, agentruntime.AskRequest{
 		AgentName:      agentModel.AgentName,
 		PromptTemplate: agentModel.PromptTemplate,
 		Question:       trimmedQuestion,
 		History:        history,
 		Materials:      materials,
-	})
+	}, onEvent)
 	if err != nil {
 		return nil, apperrors.ErrAgentUnavailable
 	}
