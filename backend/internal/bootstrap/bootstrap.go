@@ -60,7 +60,7 @@ func New(cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("ping redis: %w", err)
 	}
 
-	if err := mysqlClient.DB.AutoMigrate(&model.User{}); err != nil {
+	if err := mysqlClient.DB.AutoMigrate(&model.User{}, &model.Course{}, &model.CourseMember{}); err != nil {
 		_ = redisClient.Close()
 		_ = mysqlClient.Close()
 		return nil, fmt.Errorf("migrate mysql: %w", err)
@@ -71,7 +71,11 @@ func New(cfg *config.Config) (*App, error) {
 	userHandler := handler.NewUserHandler(userService)
 	authMiddleware := middleware.NewAuthMiddleware(userService)
 
-	engine := router.New(userHandler, authMiddleware, cfg.Server.Mode)
+	courseRepo := repository.NewCourseRepository(mysqlClient.DB)
+	courseService := service.NewCourseService(courseRepo)
+	courseHandler := handler.NewCourseHandler(courseService)
+
+	engine := router.New(userHandler, courseHandler, authMiddleware, cfg.Server.Mode)
 	addr := net.JoinHostPort(cfg.Server.Host, fmt.Sprintf("%d", cfg.Server.Port))
 	server := &http.Server{
 		Addr:              addr,

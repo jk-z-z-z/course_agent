@@ -10,7 +10,7 @@ import (
 	"course_agent_backend/internal/middleware"
 )
 
-func New(userHandler *handler.UserHandler, auth *middleware.AuthMiddleware, mode string) *gin.Engine {
+func New(userHandler *handler.UserHandler, courseHandler *handler.CourseHandler, auth *middleware.AuthMiddleware, mode string) *gin.Engine {
 	if mode == "release" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -37,6 +37,17 @@ func New(userHandler *handler.UserHandler, auth *middleware.AuthMiddleware, mode
 		users.POST("/login", userHandler.Login)
 		users.POST("/logout", auth.RequireAuth(), userHandler.Logout)
 		users.GET("/me", auth.RequireAuth(), userHandler.Me)
+	}
+
+	courses := api.Group("/courses")
+	courses.Use(auth.RequireAuth())
+	{
+		courses.POST("", courseHandler.CreateCourse)
+		courses.GET("", courseHandler.ListCourses)
+		courses.GET("/:courseId", courseHandler.GetCourse)
+		courses.PUT("/:courseId", courseHandler.UpdateCourse)
+		courses.DELETE("/:courseId", courseHandler.DeleteCourse)
+		courses.GET("/:courseId/members", courseHandler.ListMembers)
 	}
 
 	return r
