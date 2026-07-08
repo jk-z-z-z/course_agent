@@ -177,6 +177,15 @@
             </article>
           </div>
         </article>
+
+
+        <CourseMaterialsPanel
+          v-if="selectedCourse && token"
+          :key="selectedCourse.id"
+          :course-id="selectedCourse.id"
+          :token="token"
+          :can-manage="canEditCourse"
+        />
       </section>
     </section>
 
@@ -235,6 +244,7 @@ import { logout } from '@/api/user'
 import { useAuth } from '@/composables/useAuth'
 import type { CourseMemberVO, CourseRole, CourseStatus, CourseVO } from '@/types/course'
 import { formatDateTime } from '@/utils/date'
+import CourseMaterialsPanel from '@/components/CourseMaterialsPanel.vue'
 
 type EditableRole = 'teacher' | 'student'
 

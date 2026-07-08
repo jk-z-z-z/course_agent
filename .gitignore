@@ -28,6 +28,7 @@ frontend/.cache/
 # Go
 backend/bin/
 backend/dist/
+backend/storage/
 backend/tmp/
 backend/.air/
 *.test
