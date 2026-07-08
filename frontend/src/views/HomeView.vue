@@ -186,6 +186,14 @@
           :token="token"
           :can-manage="canEditCourse"
         />
+
+        <CourseAgentPanel
+          v-if="selectedCourse && token"
+          :key="`agent-${selectedCourse.id}`"
+          :course-id="selectedCourse.id"
+          :token="token"
+          :can-manage="canEditCourse"
+        />
       </section>
     </section>
 
@@ -244,6 +252,7 @@ import { logout } from '@/api/user'
 import { useAuth } from '@/composables/useAuth'
 import type { CourseMemberVO, CourseRole, CourseStatus, CourseVO } from '@/types/course'
 import { formatDateTime } from '@/utils/date'
+import CourseAgentPanel from '@/components/CourseAgentPanel.vue'
 import CourseMaterialsPanel from '@/components/CourseMaterialsPanel.vue'
 
 type EditableRole = 'teacher' | 'student'
