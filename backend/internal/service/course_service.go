@@ -219,8 +219,8 @@ func (s *CourseService) ListMembers(ctx context.Context, userID, courseID uint64
 	return result, nil
 }
 
-func (s *CourseService) AddMember(ctx context.Context, operatorUserID, courseID uint64, userIdentifier, role string) (*vo.CourseMemberVO, error) {
-	if strings.TrimSpace(userIdentifier) == "" || !isAssignableRole(role) {
+func (s *CourseService) AddMember(ctx context.Context, operatorUserID, courseID uint64, username, role string) (*vo.CourseMemberVO, error) {
+	if strings.TrimSpace(username) == "" || !isAssignableRole(role) {
 		return nil, apperrors.ErrInvalidParameter
 	}
 
@@ -235,7 +235,7 @@ func (s *CourseService) AddMember(ctx context.Context, operatorUserID, courseID 
 		return nil, apperrors.ErrForbidden
 	}
 
-	user, err := s.userRepo.GetByUsernameOrPhone(ctx, userIdentifier)
+	user, err := s.userRepo.GetByUsername(ctx, strings.TrimSpace(username))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, apperrors.ErrUserNotFound
