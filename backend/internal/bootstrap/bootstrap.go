@@ -82,8 +82,10 @@ func New(cfg *config.Config) (*App, error) {
 	materialRepo := repository.NewMaterialRepository(mysqlClient.DB)
 	courseService := service.NewCourseService(courseRepo, userRepo, materialRepo, cfg.Storage.RootPath, cfg.Storage.QuotaBytes)
 	courseHandler := handler.NewCourseHandler(courseService)
+	materialService := service.NewMaterialService(courseRepo, materialRepo)
+	materialHandler := handler.NewMaterialHandler(materialService)
 
-	engine := router.New(userHandler, courseHandler, authMiddleware, cfg.Server.Mode)
+	engine := router.New(userHandler, courseHandler, materialHandler, authMiddleware, cfg.Server.Mode)
 	addr := net.JoinHostPort(cfg.Server.Host, fmt.Sprintf("%d", cfg.Server.Port))
 	server := &http.Server{
 		Addr:              addr,

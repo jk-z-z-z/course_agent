@@ -10,7 +10,7 @@ import (
 	"course_agent_backend/internal/middleware"
 )
 
-func New(userHandler *handler.UserHandler, courseHandler *handler.CourseHandler, auth *middleware.AuthMiddleware, mode string) *gin.Engine {
+func New(userHandler *handler.UserHandler, courseHandler *handler.CourseHandler, materialHandler *handler.MaterialHandler, auth *middleware.AuthMiddleware, mode string) *gin.Engine {
 	if mode == "release" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -51,6 +51,11 @@ func New(userHandler *handler.UserHandler, courseHandler *handler.CourseHandler,
 		courses.POST("/:courseId/members", courseHandler.AddMember)
 		courses.PUT("/:courseId/members/:memberId", courseHandler.UpdateMember)
 		courses.DELETE("/:courseId/members/:memberId", courseHandler.DeleteMember)
+		courses.GET("/:courseId/materials/tree", materialHandler.GetTree)
+		courses.POST("/:courseId/materials/folders", materialHandler.CreateFolder)
+		courses.GET("/:courseId/materials/:nodeId", materialHandler.GetDetail)
+		courses.PUT("/:courseId/materials/:nodeId", materialHandler.UpdateNode)
+		courses.DELETE("/:courseId/materials/:nodeId", materialHandler.DeleteNode)
 	}
 
 	return r
