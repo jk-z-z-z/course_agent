@@ -183,6 +183,7 @@
           v-if="selectedCourse && token"
           :course-id="selectedCourse.id"
           :token="token"
+          :can-manage="canEditCourse"
         />
       </section>
     </section>
