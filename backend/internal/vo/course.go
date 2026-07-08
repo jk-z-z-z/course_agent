@@ -18,6 +18,7 @@ type CourseMemberVO struct {
 	ID         uint64    `json:"id"`
 	CourseID   uint64    `json:"courseId"`
 	UserID     uint64    `json:"userId"`
+	Username   string    `json:"username"`
 	Role       string    `json:"role"`
 	JoinStatus string    `json:"joinStatus"`
 	JoinedAt   time.Time `json:"joinedAt"`

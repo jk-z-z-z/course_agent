@@ -56,6 +56,14 @@ func (r *CourseRepository) GetMember(ctx context.Context, courseID, userID uint6
 	return &member, nil
 }
 
+func (r *CourseRepository) GetMemberByID(ctx context.Context, memberID uint64) (*model.CourseMember, error) {
+	var member model.CourseMember
+	if err := r.db.WithContext(ctx).First(&member, memberID).Error; err != nil {
+		return nil, err
+	}
+	return &member, nil
+}
+
 func (r *CourseRepository) CreateMember(ctx context.Context, member *model.CourseMember) error {
 	return r.db.WithContext(ctx).Create(member).Error
 }

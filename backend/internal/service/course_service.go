@@ -15,11 +15,12 @@ import (
 )
 
 type CourseService struct {
-	repo *repository.CourseRepository
+	repo     *repository.CourseRepository
+	userRepo *repository.UserRepository
 }
 
-func NewCourseService(repo *repository.CourseRepository) *CourseService {
-	return &CourseService{repo: repo}
+func NewCourseService(repo *repository.CourseRepository, userRepo *repository.UserRepository) *CourseService {
+	return &CourseService{repo: repo, userRepo: userRepo}
 }
 
 func (s *CourseService) CreateCourse(ctx context.Context, userID uint64, courseCode, courseName, courseDescription string) (*vo.CourseVO, error) {
@@ -110,7 +111,7 @@ func (s *CourseService) GetCourseDetail(ctx context.Context, userID, courseID ui
 		return nil, err
 	}
 	if course.Status != "active" {
-		return nil, apperrors.ErrForbidden
+		return nil, apperrors.ErrCourseNotFound
 	}
 	result := toCourseVO(course, member.Role)
 	return &result, nil
@@ -123,6 +124,9 @@ func (s *CourseService) UpdateCourse(ctx context.Context, userID, courseID uint6
 			return nil, apperrors.ErrCourseNotFound
 		}
 		return nil, err
+	}
+	if course.Status != "active" {
+		return nil, apperrors.ErrCourseNotFound
 	}
 	member, err := s.repo.GetMember(ctx, courseID, userID)
 	if err != nil {
@@ -161,6 +165,17 @@ func (s *CourseService) DeleteCourse(ctx context.Context, userID, courseID uint6
 }
 
 func (s *CourseService) ListMembers(ctx context.Context, userID, courseID uint64) ([]vo.CourseMemberVO, error) {
+	course, err := s.repo.GetCourseByID(ctx, courseID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperrors.ErrCourseNotFound
+		}
+		return nil, err
+	}
+	if course.Status != "active" {
+		return nil, apperrors.ErrCourseNotFound
+	}
+
 	member, err := s.repo.GetMember(ctx, courseID, userID)
 	if err != nil {
 		return nil, apperrors.ErrForbidden
@@ -173,12 +188,26 @@ func (s *CourseService) ListMembers(ctx context.Context, userID, courseID uint64
 	if err != nil {
 		return nil, err
 	}
+
 	result := make([]vo.CourseMemberVO, 0, len(members))
 	for _, item := range members {
+		user, err := s.userRepo.GetByID(ctx, item.UserID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				continue
+			}
+			return nil, err
+		}
+
+		if member.Role == "student" && item.UserID != userID && item.Role == "student" {
+			continue
+		}
+
 		result = append(result, vo.CourseMemberVO{
 			ID:         item.ID,
 			CourseID:   item.CourseID,
 			UserID:     item.UserID,
+			Username:   user.Username,
 			Role:       item.Role,
 			JoinStatus: item.JoinStatus,
 			JoinedAt:   item.JoinedAt,

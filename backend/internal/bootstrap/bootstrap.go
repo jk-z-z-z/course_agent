@@ -72,7 +72,7 @@ func New(cfg *config.Config) (*App, error) {
 	authMiddleware := middleware.NewAuthMiddleware(userService)
 
 	courseRepo := repository.NewCourseRepository(mysqlClient.DB)
-	courseService := service.NewCourseService(courseRepo)
+	courseService := service.NewCourseService(courseRepo, userRepo)
 	courseHandler := handler.NewCourseHandler(courseService)
 
 	engine := router.New(userHandler, courseHandler, authMiddleware, cfg.Server.Mode)
