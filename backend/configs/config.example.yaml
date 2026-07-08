@@ -9,20 +9,8 @@ mysql:
   username: course_agent
   password: course_agent
   database: course_agent
-  charset: utf8mb4
-  parseTime: true
-  loc: Local
-  maxOpenConns: 20
-  maxIdleConns: 10
-  connMaxLifetime: 300s
 
 redis:
   addr: 127.0.0.1:6379
   password: ""
   db: 0
-  poolSize: 10
-  minIdleConns: 2
-  dialTimeout: 5s
-  readTimeout: 3s
-  writeTimeout: 3s
-  connMaxIdleTime: 300s

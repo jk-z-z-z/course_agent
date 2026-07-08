@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -22,29 +23,17 @@ type ServerConfig struct {
 }
 
 type MySQLConfig struct {
-	Host            string        `yaml:"host"`
-	Port            int           `yaml:"port"`
-	Username        string        `yaml:"username"`
-	Password        string        `yaml:"password"`
-	Database        string        `yaml:"database"`
-	Charset         string        `yaml:"charset"`
-	ParseTime       bool          `yaml:"parseTime"`
-	Loc             string        `yaml:"loc"`
-	MaxOpenConns    int           `yaml:"maxOpenConns"`
-	MaxIdleConns    int           `yaml:"maxIdleConns"`
-	ConnMaxLifetime time.Duration `yaml:"connMaxLifetime"`
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	Database string `yaml:"database"`
 }
 
 type RedisConfig struct {
-	Addr            string        `yaml:"addr"`
-	Password        string        `yaml:"password"`
-	DB              int           `yaml:"db"`
-	PoolSize        int           `yaml:"poolSize"`
-	MinIdleConns    int           `yaml:"minIdleConns"`
-	DialTimeout     time.Duration `yaml:"dialTimeout"`
-	ReadTimeout     time.Duration `yaml:"readTimeout"`
-	WriteTimeout    time.Duration `yaml:"writeTimeout"`
-	ConnMaxIdleTime time.Duration `yaml:"connMaxIdleTime"`
+	Addr     string `yaml:"addr"`
+	Password string `yaml:"password"`
+	DB       int    `yaml:"db"`
 }
 
 func Load(path string) (*Config, error) {
@@ -58,7 +47,10 @@ func Load(path string) (*Config, error) {
 		return nil, fmt.Errorf("parse config file: %w", err)
 	}
 
-	overrideFromEnv(&cfg)
+	applyDefaults(&cfg)
+	if err := overrideFromEnv(&cfg); err != nil {
+		return nil, err
+	}
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
@@ -66,12 +58,36 @@ func Load(path string) (*Config, error) {
 	return &cfg, nil
 }
 
-func overrideFromEnv(cfg *Config) {
+func applyDefaults(cfg *Config) {
+	if cfg.Server.Host == "" {
+		cfg.Server.Host = "0.0.0.0"
+	}
+	if cfg.Server.Port == 0 {
+		cfg.Server.Port = 8080
+	}
+	if cfg.Server.Mode == "" {
+		cfg.Server.Mode = "debug"
+	}
+
+	if cfg.MySQL.Port == 0 {
+		cfg.MySQL.Port = 3306
+	}
+
+	if cfg.Redis.DB == 0 {
+		cfg.Redis.DB = 0
+	}
+}
+
+func overrideFromEnv(cfg *Config) error {
 	if v := os.Getenv("APP_SERVER_HOST"); v != "" {
 		cfg.Server.Host = v
 	}
 	if v := os.Getenv("APP_SERVER_PORT"); v != "" {
-		fmt.Sscanf(v, "%d", &cfg.Server.Port)
+		value, err := strconv.Atoi(strings.TrimSpace(v))
+		if err != nil {
+			return fmt.Errorf("invalid APP_SERVER_PORT: %w", err)
+		}
+		cfg.Server.Port = value
 	}
 	if v := os.Getenv("APP_SERVER_MODE"); v != "" {
 		cfg.Server.Mode = v
@@ -81,7 +97,11 @@ func overrideFromEnv(cfg *Config) {
 		cfg.MySQL.Host = v
 	}
 	if v := os.Getenv("APP_MYSQL_PORT"); v != "" {
-		fmt.Sscanf(v, "%d", &cfg.MySQL.Port)
+		value, err := strconv.Atoi(strings.TrimSpace(v))
+		if err != nil {
+			return fmt.Errorf("invalid APP_MYSQL_PORT: %w", err)
+		}
+		cfg.MySQL.Port = value
 	}
 	if v := os.Getenv("APP_MYSQL_USERNAME"); v != "" {
 		cfg.MySQL.Username = v
@@ -100,8 +120,14 @@ func overrideFromEnv(cfg *Config) {
 		cfg.Redis.Password = v
 	}
 	if v := os.Getenv("APP_REDIS_DB"); v != "" {
-		fmt.Sscanf(v, "%d", &cfg.Redis.DB)
+		value, err := strconv.Atoi(strings.TrimSpace(v))
+		if err != nil {
+			return fmt.Errorf("invalid APP_REDIS_DB: %w", err)
+		}
+		cfg.Redis.DB = value
 	}
+
+	return nil
 }
 
 func (c Config) Validate() error {
@@ -128,3 +154,16 @@ func (c Config) Validate() error {
 	}
 	return nil
 }
+
+func DefaultMySQLMaxOpenConns() int { return 20 }
+func DefaultMySQLMaxIdleConns() int { return 10 }
+func DefaultMySQLConnMaxLifetime() time.Duration { return 5 * time.Minute }
+func DefaultMySQLCharset() string { return "utf8mb4" }
+func DefaultMySQLLoc() string { return "Local" }
+func DefaultMySQLParseTime() bool { return true }
+func DefaultRedisPoolSize() int { return 10 }
+func DefaultRedisMinIdleConns() int { return 2 }
+func DefaultRedisDialTimeout() time.Duration { return 5 * time.Second }
+func DefaultRedisReadTimeout() time.Duration { return 3 * time.Second }
+func DefaultRedisWriteTimeout() time.Duration { return 3 * time.Second }
+func DefaultRedisConnMaxIdleTime() time.Duration { return 5 * time.Minute }
