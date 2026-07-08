@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
+
 	"course_agent_backend/internal/authcontext"
 	apperrors "course_agent_backend/internal/errors"
 	"course_agent_backend/internal/response"
@@ -18,21 +20,24 @@ func NewAuthMiddleware(service *service.UserService) *AuthMiddleware {
 	return &AuthMiddleware{service: service}
 }
 
-func (m *AuthMiddleware) RequireAuth(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := bearerToken(r.Header.Get("Authorization"))
-		userID, err := m.service.ResolveToken(r.Context(), token)
+func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := bearerToken(c.GetHeader("Authorization"))
+		userID, err := m.service.ResolveToken(c.Request.Context(), token)
 		if err != nil {
 			if codeErr, ok := err.(*apperrors.CodeError); ok {
-				response.Fail(w, http.StatusUnauthorized, codeErr.Code, codeErr.Message)
+				response.Fail(c, http.StatusUnauthorized, codeErr.Code, codeErr.Message)
+				c.Abort()
 				return
 			}
-			response.Fail(w, http.StatusInternalServerError, 50000, err.Error())
+			response.Fail(c, http.StatusInternalServerError, 50000, err.Error())
+			c.Abort()
 			return
 		}
 
-		next.ServeHTTP(w, r.WithContext(authcontext.WithUserID(r.Context(), userID)))
-	})
+		c.Request = c.Request.WithContext(authcontext.WithUserID(c.Request.Context(), userID))
+		c.Next()
+	}
 }
 
 func bearerToken(header string) string {

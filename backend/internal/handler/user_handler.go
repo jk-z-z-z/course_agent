@@ -1,10 +1,11 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
 
 	"course_agent_backend/internal/authcontext"
 	apperrors "course_agent_backend/internal/errors"
@@ -21,64 +22,64 @@ func NewUserHandler(service *service.UserService) *UserHandler {
 	return &UserHandler{service: service}
 }
 
-func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) Register(c *gin.Context) {
 	var req dto.RegisterRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		response.Fail(w, http.StatusBadRequest, apperrors.ErrInvalidParameter.Code, apperrors.ErrInvalidParameter.Message)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, apperrors.ErrInvalidParameter.Code, apperrors.ErrInvalidParameter.Message)
 		return
 	}
 
-	user, err := h.service.Register(r.Context(), strings.TrimSpace(req.Username), req.Password, strings.TrimSpace(req.Phone))
+	user, err := h.service.Register(c.Request.Context(), strings.TrimSpace(req.Username), req.Password, strings.TrimSpace(req.Phone))
 	if err != nil {
-		h.writeError(w, err)
+		h.writeError(c, err)
 		return
 	}
-	response.Success(w, user)
+	response.Success(c, user)
 }
 
-func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		response.Fail(w, http.StatusBadRequest, apperrors.ErrInvalidParameter.Code, apperrors.ErrInvalidParameter.Message)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, apperrors.ErrInvalidParameter.Code, apperrors.ErrInvalidParameter.Message)
 		return
 	}
 
-	token, expiredAt, user, err := h.service.Login(r.Context(), strings.TrimSpace(req.Username), req.Password)
+	token, expiredAt, user, err := h.service.Login(c.Request.Context(), strings.TrimSpace(req.Username), req.Password)
 	if err != nil {
-		h.writeError(w, err)
+		h.writeError(c, err)
 		return
 	}
-	response.Success(w, map[string]interface{}{
+	response.Success(c, map[string]interface{}{
 		"token":     token,
 		"expiredAt": expiredAt.Format(time.RFC3339),
 		"user":      user,
 	})
 }
 
-func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
-	token := bearerToken(r.Header.Get("Authorization"))
-	if err := h.service.Logout(r.Context(), token); err != nil {
-		h.writeError(w, err)
+func (h *UserHandler) Logout(c *gin.Context) {
+	token := bearerToken(c.GetHeader("Authorization"))
+	if err := h.service.Logout(c.Request.Context(), token); err != nil {
+		h.writeError(c, err)
 		return
 	}
-	response.Success(w, nil)
+	response.Success(c, nil)
 }
 
-func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request) {
-	userID, ok := authcontext.UserID(r.Context())
+func (h *UserHandler) Me(c *gin.Context) {
+	userID, ok := authcontext.UserID(c.Request.Context())
 	if !ok || userID == 0 {
-		response.Fail(w, http.StatusUnauthorized, apperrors.ErrUnauthorized.Code, apperrors.ErrUnauthorized.Message)
+		response.Fail(c, http.StatusUnauthorized, apperrors.ErrUnauthorized.Code, apperrors.ErrUnauthorized.Message)
 		return
 	}
-	user, err := h.service.Me(r.Context(), userID)
+	user, err := h.service.Me(c.Request.Context(), userID)
 	if err != nil {
-		h.writeError(w, err)
+		h.writeError(c, err)
 		return
 	}
-	response.Success(w, user)
+	response.Success(c, user)
 }
 
-func (h *UserHandler) writeError(w http.ResponseWriter, err error) {
+func (h *UserHandler) writeError(c *gin.Context, err error) {
 	if codeErr, ok := err.(*apperrors.CodeError); ok {
 		status := http.StatusBadRequest
 		switch codeErr.Code {
@@ -89,10 +90,10 @@ func (h *UserHandler) writeError(w http.ResponseWriter, err error) {
 		case apperrors.ErrUserNotFound.Code:
 			status = http.StatusNotFound
 		}
-		response.Fail(w, status, codeErr.Code, codeErr.Message)
+		response.Fail(c, status, codeErr.Code, codeErr.Message)
 		return
 	}
-	response.Fail(w, http.StatusInternalServerError, 50000, err.Error())
+	response.Fail(c, http.StatusInternalServerError, 50000, err.Error())
 }
 
 func bearerToken(header string) string {

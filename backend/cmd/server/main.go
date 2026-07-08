@@ -2,9 +2,7 @@ package main
 
 import (
 	"context"
-	"errors"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -41,8 +39,8 @@ func main() {
 
 	go func() {
 		log.Printf("backend listening on %s", app.Server.Addr)
-		if serveErr := app.Server.ListenAndServe(); serveErr != nil && !errors.Is(serveErr, http.ErrServerClosed) {
-			log.Printf("http server stopped: %v", serveErr)
+		if err := app.Server.ListenAndServe(); err != nil && err != context.Canceled {
+			log.Printf("http server stopped: %v", err)
 			stop()
 		}
 	}()
