@@ -216,6 +216,66 @@ func (s *CourseService) ListMembers(ctx context.Context, userID, courseID uint64
 	return result, nil
 }
 
+func (s *CourseService) AddMember(ctx context.Context, operatorUserID, courseID, targetUserID uint64, role string) (*vo.CourseMemberVO, error) {
+	if targetUserID == 0 || !isAssignableRole(role) {
+		return nil, apperrors.ErrInvalidParameter
+	}
+
+	course, operatorMember, err := s.loadCourseAndMember(ctx, operatorUserID, courseID)
+	if err != nil {
+		return nil, err
+	}
+	if operatorMember.Role != "owner" && operatorMember.Role != "teacher" {
+		return nil, apperrors.ErrForbidden
+	}
+
+	user, err := s.userRepo.GetByID(ctx, targetUserID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperrors.ErrUserNotFound
+		}
+		return nil, err
+	}
+	if user.Status != "active" {
+		return nil, apperrors.ErrUserDisabled
+	}
+
+	if targetUserID == course.OwnerUserID {
+		return nil, apperrors.ErrCourseMemberExists
+	}
+
+	existing, err := s.repo.GetMember(ctx, courseID, targetUserID)
+	if err == nil {
+		if existing.JoinStatus == "active" {
+			return nil, apperrors.ErrCourseMemberExists
+		}
+		existing.Role = role
+		existing.JoinStatus = "active"
+		existing.JoinedAt = time.Now()
+		if err := s.repo.UpdateMember(ctx, existing); err != nil {
+			return nil, err
+		}
+		memberVO := toCourseMemberVO(existing, user.Username)
+		return &memberVO, nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	member := &model.CourseMember{
+		CourseID:   courseID,
+		UserID:     targetUserID,
+		Role:       role,
+		JoinStatus: "active",
+		JoinedAt:   time.Now(),
+	}
+	if err := s.repo.CreateMember(ctx, member); err != nil {
+		return nil, err
+	}
+	memberVO := toCourseMemberVO(member, user.Username)
+	return &memberVO, nil
+}
+
 func toCourseVO(course *model.Course, myRole string) vo.CourseVO {
 	return vo.CourseVO{
 		ID:                course.ID,
@@ -227,5 +287,52 @@ func toCourseVO(course *model.Course, myRole string) vo.CourseVO {
 		CreatedAt:         course.CreatedAt,
 		UpdatedAt:         course.UpdatedAt,
 		MyRole:            myRole,
+	}
+}
+
+func toCourseMemberVO(member *model.CourseMember, username string) vo.CourseMemberVO {
+	return vo.CourseMemberVO{
+		ID:         member.ID,
+		CourseID:   member.CourseID,
+		UserID:     member.UserID,
+		Username:   username,
+		Role:       member.Role,
+		JoinStatus: member.JoinStatus,
+		JoinedAt:   member.JoinedAt,
+	}
+}
+
+func (s *CourseService) loadCourseAndMember(ctx context.Context, userID, courseID uint64) (*model.Course, *model.CourseMember, error) {
+	course, err := s.repo.GetCourseByID(ctx, courseID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil, apperrors.ErrCourseNotFound
+		}
+		return nil, nil, err
+	}
+	if course.Status != "active" {
+		return nil, nil, apperrors.ErrCourseNotFound
+	}
+
+	member, err := s.repo.GetMember(ctx, courseID, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil, apperrors.ErrForbidden
+		}
+		return nil, nil, err
+	}
+	if member.JoinStatus != "active" {
+		return nil, nil, apperrors.ErrForbidden
+	}
+
+	return course, member, nil
+}
+
+func isAssignableRole(role string) bool {
+	switch strings.TrimSpace(role) {
+	case "teacher", "student":
+		return true
+	default:
+		return false
 	}
 }

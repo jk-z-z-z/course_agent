@@ -48,6 +48,7 @@ func New(userHandler *handler.UserHandler, courseHandler *handler.CourseHandler,
 		courses.PUT("/:courseId", courseHandler.UpdateCourse)
 		courses.DELETE("/:courseId", courseHandler.DeleteCourse)
 		courses.GET("/:courseId/members", courseHandler.ListMembers)
+		courses.POST("/:courseId/members", courseHandler.AddMember)
 	}
 
 	return r
