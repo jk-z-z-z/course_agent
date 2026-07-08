@@ -1,8 +1,9 @@
 package response
 
 import (
-	"encoding/json"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type Envelope struct {
@@ -11,16 +12,10 @@ type Envelope struct {
 	Data    interface{} `json:"data"`
 }
 
-func WriteJSON(w http.ResponseWriter, status int, code int, message string, data interface{}) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(Envelope{Code: code, Message: message, Data: data})
+func Success(c *gin.Context, data interface{}) {
+	c.JSON(http.StatusOK, Envelope{Code: 0, Message: "success", Data: data})
 }
 
-func Success(w http.ResponseWriter, data interface{}) {
-	WriteJSON(w, http.StatusOK, 0, "success", data)
-}
-
-func Fail(w http.ResponseWriter, status int, code int, message string) {
-	WriteJSON(w, status, code, message, nil)
+func Fail(c *gin.Context, status int, code int, message string) {
+	c.JSON(status, Envelope{Code: code, Message: message, Data: nil})
 }

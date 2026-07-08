@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -26,6 +27,7 @@ type App struct {
 	Config *config.Config
 	MySQL  *MySQLClient
 	Redis  *RedisClient
+	Engine *gin.Engine
 	Server *http.Server
 }
 
@@ -69,10 +71,11 @@ func New(cfg *config.Config) (*App, error) {
 	userHandler := handler.NewUserHandler(userService)
 	authMiddleware := middleware.NewAuthMiddleware(userService)
 
+	engine := router.New(userHandler, authMiddleware, cfg.Server.Mode)
 	addr := net.JoinHostPort(cfg.Server.Host, fmt.Sprintf("%d", cfg.Server.Port))
 	server := &http.Server{
 		Addr:              addr,
-		Handler:           router.New(userHandler, authMiddleware),
+		Handler:           engine,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
@@ -80,6 +83,7 @@ func New(cfg *config.Config) (*App, error) {
 		Config: cfg,
 		MySQL:  mysqlClient,
 		Redis:  redisClient,
+		Engine: engine,
 		Server: server,
 	}, nil
 }
