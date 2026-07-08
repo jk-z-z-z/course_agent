@@ -151,7 +151,7 @@ func (h *CourseHandler) AddMember(c *gin.Context) {
 		response.Fail(c, http.StatusUnauthorized, apperrors.ErrUnauthorized.Code, apperrors.ErrUnauthorized.Message)
 		return
 	}
-	member, err := h.service.AddMember(c.Request.Context(), userID, courseID, req.UserID, strings.TrimSpace(req.Role))
+	member, err := h.service.AddMember(c.Request.Context(), userID, courseID, strings.TrimSpace(req.Username), strings.TrimSpace(req.Role))
 	if err != nil {
 		h.writeError(c, err)
 		return

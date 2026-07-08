@@ -12,8 +12,8 @@ type UpdateCourseRequest struct {
 }
 
 type AddCourseMemberRequest struct {
-	UserID uint64 `json:"userId"`
-	Role   string `json:"role"`
+	Username string `json:"username"`
+	Role     string `json:"role"`
 }
 
 type UpdateCourseMemberRequest struct {

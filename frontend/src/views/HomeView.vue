@@ -111,8 +111,8 @@
 
             <form class="inline-form" @submit.prevent="submitMemberForm">
               <label class="field inline-field">
-                <span>用户 ID</span>
-                <input v-model.number="memberForm.userId" type="number" min="1" placeholder="例如 1002" />
+                <span>用户名</span>
+                <input v-model.trim="memberForm.username" type="text" placeholder="输入用户名" />
               </label>
 
               <label class="field inline-field">
@@ -263,7 +263,7 @@ const courseForm = reactive({
   courseDescription: '',
 })
 const memberForm = reactive({
-  userId: 0,
+  username: "",
   role: 'student' as EditableRole,
 })
 
@@ -420,10 +420,10 @@ async function submitMemberForm() {
   memberActionError.value = ''
   try {
     await addCourseMember(token.value, selectedCourseId.value, {
-      userId: Number(memberForm.userId),
+      username: memberForm.username,
       role: memberForm.role,
     })
-    memberForm.userId = 0
+    memberForm.username = ""
     normalizeMemberRoleForm()
     await loadMembers(selectedCourseId.value)
   } catch (error) {

@@ -219,8 +219,8 @@ func (s *CourseService) ListMembers(ctx context.Context, userID, courseID uint64
 	return result, nil
 }
 
-func (s *CourseService) AddMember(ctx context.Context, operatorUserID, courseID, targetUserID uint64, role string) (*vo.CourseMemberVO, error) {
-	if targetUserID == 0 || !isAssignableRole(role) {
+func (s *CourseService) AddMember(ctx context.Context, operatorUserID, courseID uint64, username, role string) (*vo.CourseMemberVO, error) {
+	if strings.TrimSpace(username) == "" || !isAssignableRole(role) {
 		return nil, apperrors.ErrInvalidParameter
 	}
 
@@ -235,7 +235,7 @@ func (s *CourseService) AddMember(ctx context.Context, operatorUserID, courseID,
 		return nil, apperrors.ErrForbidden
 	}
 
-	user, err := s.userRepo.GetByID(ctx, targetUserID)
+	user, err := s.userRepo.GetByUsername(ctx, strings.TrimSpace(username))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, apperrors.ErrUserNotFound
@@ -246,11 +246,11 @@ func (s *CourseService) AddMember(ctx context.Context, operatorUserID, courseID,
 		return nil, apperrors.ErrUserDisabled
 	}
 
-	if targetUserID == course.OwnerUserID {
+	if user.ID == course.OwnerUserID {
 		return nil, apperrors.ErrCourseMemberExists
 	}
 
-	existing, err := s.repo.GetMember(ctx, courseID, targetUserID)
+	existing, err := s.repo.GetMember(ctx, courseID, user.ID)
 	if err == nil {
 		if existing.JoinStatus == "active" {
 			return nil, apperrors.ErrCourseMemberExists
@@ -270,7 +270,7 @@ func (s *CourseService) AddMember(ctx context.Context, operatorUserID, courseID,
 
 	member := &model.CourseMember{
 		CourseID:   courseID,
-		UserID:     targetUserID,
+		UserID:     user.ID,
 		Role:       role,
 		JoinStatus: "active",
 		JoinedAt:   time.Now(),
