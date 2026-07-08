@@ -36,7 +36,7 @@ export interface UpdateCoursePayload {
 }
 
 export interface AddCourseMemberPayload {
-  userId: number
+  userIdentifier: string
   role: Exclude<CourseRole, 'owner'>
 }
 
