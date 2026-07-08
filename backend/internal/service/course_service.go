@@ -3,6 +3,9 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -15,12 +18,21 @@ import (
 )
 
 type CourseService struct {
-	repo     *repository.CourseRepository
-	userRepo *repository.UserRepository
+	repo          *repository.CourseRepository
+	userRepo      *repository.UserRepository
+	materialRepo  *repository.MaterialRepository
+	storageRoot   string
+	storageQuota  int64
 }
 
-func NewCourseService(repo *repository.CourseRepository, userRepo *repository.UserRepository) *CourseService {
-	return &CourseService{repo: repo, userRepo: userRepo}
+func NewCourseService(repo *repository.CourseRepository, userRepo *repository.UserRepository, materialRepo *repository.MaterialRepository, storageRoot string, storageQuota int64) *CourseService {
+	return &CourseService{
+		repo:         repo,
+		userRepo:     userRepo,
+		materialRepo: materialRepo,
+		storageRoot:  storageRoot,
+		storageQuota: storageQuota,
+	}
 }
 
 func (s *CourseService) CreateCourse(ctx context.Context, userID uint64, courseCode, courseName, courseDescription string) (*vo.CourseVO, error) {
@@ -56,6 +68,20 @@ func (s *CourseService) CreateCourse(ctx context.Context, userID uint64, courseC
 			JoinedAt:   now,
 		}
 		if err := tx.Create(member).Error; err != nil {
+			return err
+		}
+
+		rootPath := filepath.Join(s.storageRoot, fmt.Sprintf("%d", course.ID))
+		if err := os.MkdirAll(rootPath, 0o755); err != nil {
+			return fmt.Errorf("create course storage directory: %w", err)
+		}
+		space := &model.CourseStorageSpace{
+			CourseID:   course.ID,
+			RootPath:   rootPath,
+			QuotaBytes: s.storageQuota,
+			UsedBytes:  0,
+		}
+		if err := s.materialRepo.CreateStorageSpaceTx(tx, space); err != nil {
 			return err
 		}
 		created = course

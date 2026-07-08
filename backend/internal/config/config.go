@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -11,9 +12,10 @@ import (
 )
 
 type Config struct {
-	Server ServerConfig `yaml:"server"`
-	MySQL  MySQLConfig  `yaml:"mysql"`
-	Redis  RedisConfig  `yaml:"redis"`
+	Server  ServerConfig  `yaml:"server"`
+	MySQL   MySQLConfig   `yaml:"mysql"`
+	Redis   RedisConfig   `yaml:"redis"`
+	Storage StorageConfig `yaml:"storage"`
 }
 
 type ServerConfig struct {
@@ -34,6 +36,11 @@ type RedisConfig struct {
 	Addr     string `yaml:"addr"`
 	Password string `yaml:"password"`
 	DB       int    `yaml:"db"`
+}
+
+type StorageConfig struct {
+	RootPath   string `yaml:"rootPath"`
+	QuotaBytes int64  `yaml:"quotaBytes"`
 }
 
 func Load(path string) (*Config, error) {
@@ -75,6 +82,13 @@ func applyDefaults(cfg *Config) {
 
 	if cfg.Redis.DB == 0 {
 		cfg.Redis.DB = 0
+	}
+
+	if strings.TrimSpace(cfg.Storage.RootPath) == "" {
+		cfg.Storage.RootPath = filepath.Join("storage", "course")
+	}
+	if cfg.Storage.QuotaBytes == 0 {
+		cfg.Storage.QuotaBytes = 1 << 30
 	}
 }
 
@@ -126,6 +140,16 @@ func overrideFromEnv(cfg *Config) error {
 		}
 		cfg.Redis.DB = value
 	}
+	if v := os.Getenv("APP_STORAGE_ROOT_PATH"); v != "" {
+		cfg.Storage.RootPath = v
+	}
+	if v := os.Getenv("APP_STORAGE_QUOTA_BYTES"); v != "" {
+		value, err := strconv.ParseInt(strings.TrimSpace(v), 10, 64)
+		if err != nil {
+			return fmt.Errorf("invalid APP_STORAGE_QUOTA_BYTES: %w", err)
+		}
+		cfg.Storage.QuotaBytes = value
+	}
 
 	return nil
 }
@@ -151,6 +175,12 @@ func (c Config) Validate() error {
 	}
 	if strings.TrimSpace(c.Redis.Addr) == "" {
 		return fmt.Errorf("redis.addr is required")
+	}
+	if strings.TrimSpace(c.Storage.RootPath) == "" {
+		return fmt.Errorf("storage.rootPath is required")
+	}
+	if c.Storage.QuotaBytes < 0 {
+		return fmt.Errorf("storage.quotaBytes must be non-negative")
 	}
 	return nil
 }
