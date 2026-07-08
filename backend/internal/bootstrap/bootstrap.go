@@ -14,6 +14,7 @@ import (
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 
+	"course_agent_backend/internal/agent"
 	"course_agent_backend/internal/config"
 	"course_agent_backend/internal/handler"
 	"course_agent_backend/internal/middleware"
@@ -98,8 +99,20 @@ func New(cfg *config.Config) (*App, error) {
 	courseHandler := handler.NewCourseHandler(courseService)
 	materialService := service.NewMaterialService(courseRepo, materialRepo)
 	materialHandler := handler.NewMaterialHandler(materialService)
+	agentRuntime, err := agent.NewClient(context.Background(), agent.Config{
+		BaseURL: cfg.Agent.BaseURL,
+		APIKey:  cfg.Agent.APIKey,
+		Model:   cfg.Agent.Model,
+	})
+	if err != nil {
+		_ = redisClient.Close()
+		_ = mysqlClient.Close()
+		return nil, fmt.Errorf("init agent runtime: %w", err)
+	}
+	agentService := service.NewAgentService(courseRepo, agentRepo, materialRepo, agentRuntime)
+	agentHandler := handler.NewAgentHandler(agentService)
 
-	engine := router.New(userHandler, courseHandler, materialHandler, authMiddleware, cfg.Server.Mode)
+	engine := router.New(userHandler, courseHandler, materialHandler, agentHandler, authMiddleware, cfg.Server.Mode)
 	addr := net.JoinHostPort(cfg.Server.Host, fmt.Sprintf("%d", cfg.Server.Port))
 	server := &http.Server{
 		Addr:              addr,

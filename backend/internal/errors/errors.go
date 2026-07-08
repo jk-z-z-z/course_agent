@@ -30,7 +30,11 @@ var (
 	ErrCourseMemberNotFound = New(43003, "课程成员不存在")
 	ErrMaterialNotFound     = New(43004, "资料不存在")
 	ErrStorageSpaceNotFound = New(43005, "资料空间不存在")
+	ErrAgentNotFound        = New(43006, "Agent 不存在")
+	ErrConversationNotFound = New(43007, "会话不存在")
 	ErrUserDisabled     = New(44001, "用户已被禁用")
+	ErrAgentDisabled        = New(44002, "Agent 已禁用")
+	ErrAgentUnavailable     = New(45001, "Agent 当前不可用")
 )
 
 func Wrap(code int, message string, err error) error {
