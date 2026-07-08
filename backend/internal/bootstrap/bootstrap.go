@@ -67,6 +67,10 @@ func New(cfg *config.Config) (*App, error) {
 		&model.CourseStorageSpace{},
 		&model.CourseMaterialNode{},
 		&model.CourseMaterialVersion{},
+		&model.CourseAgent{},
+		&model.AgentConversation{},
+		&model.AgentMessage{},
+		&model.AgentMessageSource{},
 	); err != nil {
 		_ = redisClient.Close()
 		_ = mysqlClient.Close()
@@ -80,7 +84,17 @@ func New(cfg *config.Config) (*App, error) {
 
 	courseRepo := repository.NewCourseRepository(mysqlClient.DB)
 	materialRepo := repository.NewMaterialRepository(mysqlClient.DB)
-	courseService := service.NewCourseService(courseRepo, userRepo, materialRepo, cfg.Storage.RootPath, cfg.Storage.QuotaBytes)
+	agentRepo := repository.NewAgentRepository(mysqlClient.DB)
+	courseService := service.NewCourseService(
+		courseRepo,
+		userRepo,
+		materialRepo,
+		agentRepo,
+		cfg.Storage.RootPath,
+		cfg.Storage.QuotaBytes,
+		cfg.Agent.DefaultAgentName,
+		cfg.Agent.PromptTemplate,
+	)
 	courseHandler := handler.NewCourseHandler(courseService)
 	materialService := service.NewMaterialService(courseRepo, materialRepo)
 	materialHandler := handler.NewMaterialHandler(materialService)

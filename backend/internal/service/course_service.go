@@ -21,17 +21,23 @@ type CourseService struct {
 	repo          *repository.CourseRepository
 	userRepo      *repository.UserRepository
 	materialRepo  *repository.MaterialRepository
+	agentRepo     *repository.AgentRepository
 	storageRoot   string
 	storageQuota  int64
+	defaultAgentName string
+	defaultAgentPrompt string
 }
 
-func NewCourseService(repo *repository.CourseRepository, userRepo *repository.UserRepository, materialRepo *repository.MaterialRepository, storageRoot string, storageQuota int64) *CourseService {
+func NewCourseService(repo *repository.CourseRepository, userRepo *repository.UserRepository, materialRepo *repository.MaterialRepository, agentRepo *repository.AgentRepository, storageRoot string, storageQuota int64, defaultAgentName, defaultAgentPrompt string) *CourseService {
 	return &CourseService{
-		repo:         repo,
-		userRepo:     userRepo,
-		materialRepo: materialRepo,
-		storageRoot:  storageRoot,
-		storageQuota: storageQuota,
+		repo:               repo,
+		userRepo:           userRepo,
+		materialRepo:       materialRepo,
+		agentRepo:          agentRepo,
+		storageRoot:        storageRoot,
+		storageQuota:       storageQuota,
+		defaultAgentName:   defaultAgentName,
+		defaultAgentPrompt: defaultAgentPrompt,
 	}
 }
 
@@ -82,6 +88,17 @@ func (s *CourseService) CreateCourse(ctx context.Context, userID uint64, courseC
 			UsedBytes:  0,
 		}
 		if err := s.materialRepo.CreateStorageSpaceTx(tx, space); err != nil {
+			return err
+		}
+		courseAgent := &model.CourseAgent{
+			CourseID:       course.ID,
+			AgentName:      s.defaultAgentName,
+			PromptTemplate: s.defaultAgentPrompt,
+			Status:         "enabled",
+			RetrievalScope: "course_all",
+			CreatedBy:      userID,
+		}
+		if err := s.agentRepo.CreateCourseAgentTx(tx, courseAgent); err != nil {
 			return err
 		}
 		created = course
