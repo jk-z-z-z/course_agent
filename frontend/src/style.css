@@ -427,3 +427,58 @@ h3 {
   width: min(640px, 100%);
   padding: 28px;
 }
+
+.section-head-top {
+  margin-bottom: 18px;
+}
+
+.member-form-panel {
+  margin-bottom: 18px;
+}
+
+.inline-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px 140px;
+  gap: 14px;
+  align-items: end;
+}
+
+.inline-field {
+  margin: 0;
+}
+
+.submit-inline {
+  width: 100%;
+}
+
+.member-actions {
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.member-side.wide {
+  min-width: 280px;
+}
+
+.member-select {
+  min-width: 110px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-main);
+}
+
+@media (max-width: 780px) {
+  .inline-form {
+    grid-template-columns: 1fr;
+  }
+
+  .member-side.wide {
+    min-width: 0;
+  }
+
+  .member-actions {
+    justify-content: flex-start;
+  }
+}

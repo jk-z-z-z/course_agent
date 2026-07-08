@@ -87,7 +87,7 @@
         </article>
 
         <article class="card members-card">
-          <div class="section-head">
+          <div class="section-head section-head-top">
             <div>
               <p class="eyebrow">Roster</p>
               <h3>成员列表</h3>
@@ -101,6 +101,35 @@
             </button>
           </div>
 
+          <div v-if="selectedCourse && canAddMember" class="panel member-form-panel">
+            <div class="section-head">
+              <div>
+                <p class="label">添加成员</p>
+                <p class="muted-copy">教师只能添加学生，创建者可以添加教师和学生。</p>
+              </div>
+            </div>
+
+            <form class="inline-form" @submit.prevent="submitMemberForm">
+              <label class="field inline-field">
+                <span>用户 ID</span>
+                <input v-model.number="memberForm.userId" type="number" min="1" placeholder="例如 1002" />
+              </label>
+
+              <label class="field inline-field">
+                <span>角色</span>
+                <select v-model="memberForm.role">
+                  <option value="student">学生</option>
+                  <option v-if="selectedCourse.myRole === 'owner'" value="teacher">教师</option>
+                </select>
+              </label>
+
+              <button class="button primary compact submit-inline" type="submit" :disabled="savingMemberMutation">
+                {{ savingMemberMutation ? '提交中' : '添加成员' }}
+              </button>
+            </form>
+          </div>
+
+          <p v-if="memberActionError" class="error">{{ memberActionError }}</p>
           <p v-if="memberError" class="error">{{ memberError }}</p>
           <p v-else-if="!selectedCourse" class="muted-copy">选择课程后查看成员列表。</p>
           <p v-else-if="!members.length && !loadingMembers" class="muted-copy">当前课程还没有可显示的成员。</p>
@@ -111,8 +140,38 @@
                 <p class="member-name">{{ member.username }}</p>
                 <p class="member-meta">ID {{ member.userId }}</p>
               </div>
-              <div class="member-side">
-                <span class="pill subtle">{{ roleLabel(member.role) }}</span>
+
+              <div class="member-side wide">
+                <div v-if="canChangeMemberRole(member)" class="inline-actions member-actions">
+                  <select
+                    :value="member.role"
+                    class="member-select"
+                    @change="handleRoleChange(member, ($event.target as HTMLSelectElement).value as EditableRole)"
+                  >
+                    <option value="student">学生</option>
+                    <option value="teacher">教师</option>
+                  </select>
+                  <button
+                    class="button danger compact"
+                    @click="handleRemoveMember(member)"
+                    :disabled="savingMemberMutation"
+                  >
+                    移除
+                  </button>
+                </div>
+
+                <div v-else-if="canRemoveMember(member)" class="inline-actions member-actions">
+                  <span class="pill subtle">{{ roleLabel(member.role) }}</span>
+                  <button
+                    class="button danger compact"
+                    @click="handleRemoveMember(member)"
+                    :disabled="savingMemberMutation"
+                  >
+                    移除
+                  </button>
+                </div>
+
+                <span v-else class="pill subtle">{{ roleLabel(member.role) }}</span>
                 <span class="member-meta">加入于 {{ formatDateTime(member.joinedAt) }}</span>
               </div>
             </article>
@@ -161,11 +220,23 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { createCourse, deleteCourse, getCourse, listCourseMembers, listCourses, updateCourse } from '@/api/course'
+import {
+  addCourseMember,
+  createCourse,
+  deleteCourse,
+  deleteCourseMember,
+  getCourse,
+  listCourseMembers,
+  listCourses,
+  updateCourse,
+  updateCourseMember,
+} from '@/api/course'
 import { logout } from '@/api/user'
 import { useAuth } from '@/composables/useAuth'
 import type { CourseMemberVO, CourseRole, CourseStatus, CourseVO } from '@/types/course'
 import { formatDateTime } from '@/utils/date'
+
+type EditableRole = 'teacher' | 'student'
 
 const auth = useAuth()
 const router = useRouter()
@@ -175,8 +246,10 @@ const members = ref<CourseMemberVO[]>([])
 const loadingCourses = ref(false)
 const loadingMembers = ref(false)
 const savingCourse = ref(false)
+const savingMemberMutation = ref(false)
 const courseError = ref('')
 const memberError = ref('')
+const memberActionError = ref('')
 const courseFormError = ref('')
 const selectedCourseId = ref<number | null>(null)
 const selectedCourse = ref<CourseVO | null>(null)
@@ -189,10 +262,16 @@ const courseForm = reactive({
   courseName: '',
   courseDescription: '',
 })
+const memberForm = reactive({
+  userId: 0,
+  role: 'student' as EditableRole,
+})
 
 const token = computed(() => auth.token.value)
+const currentUserId = computed(() => auth.user.value?.id ?? 0)
 const canEditCourse = computed(() => selectedCourse.value?.myRole === 'owner' || selectedCourse.value?.myRole === 'teacher')
 const canDeleteCourse = computed(() => selectedCourse.value?.myRole === 'owner')
+const canAddMember = computed(() => selectedCourse.value?.myRole === 'owner' || selectedCourse.value?.myRole === 'teacher')
 
 async function loadCourses() {
   if (!token.value) return
@@ -225,8 +304,10 @@ async function selectCourse(courseId: number) {
   if (!token.value) return
   selectedCourseId.value = courseId
   courseError.value = ''
+  memberActionError.value = ''
   try {
     selectedCourse.value = await getCourse(token.value, courseId)
+    normalizeMemberRoleForm()
     await loadMembers(courseId)
   } catch (error) {
     courseError.value = error instanceof Error ? error.message : '课程详情加载失败'
@@ -331,6 +412,79 @@ async function handleDeleteCourse() {
   } finally {
     savingCourse.value = false
   }
+}
+
+async function submitMemberForm() {
+  if (!token.value || !selectedCourseId.value) return
+  savingMemberMutation.value = true
+  memberActionError.value = ''
+  try {
+    await addCourseMember(token.value, selectedCourseId.value, {
+      userId: Number(memberForm.userId),
+      role: memberForm.role,
+    })
+    memberForm.userId = 0
+    normalizeMemberRoleForm()
+    await loadMembers(selectedCourseId.value)
+  } catch (error) {
+    memberActionError.value = error instanceof Error ? error.message : '成员添加失败'
+  } finally {
+    savingMemberMutation.value = false
+  }
+}
+
+async function handleRoleChange(member: CourseMemberVO, role: EditableRole) {
+  if (!token.value || !selectedCourseId.value || member.role === role) return
+  savingMemberMutation.value = true
+  memberActionError.value = ''
+  try {
+    await updateCourseMember(token.value, selectedCourseId.value, member.id, { role })
+    await loadMembers(selectedCourseId.value)
+  } catch (error) {
+    memberActionError.value = error instanceof Error ? error.message : '成员角色更新失败'
+  } finally {
+    savingMemberMutation.value = false
+  }
+}
+
+async function handleRemoveMember(member: CourseMemberVO) {
+  if (!token.value || !selectedCourseId.value) return
+  const confirmed = window.confirm(`确认将 ${member.username} 移出课程吗？`)
+  if (!confirmed) return
+
+  savingMemberMutation.value = true
+  memberActionError.value = ''
+  try {
+    await deleteCourseMember(token.value, selectedCourseId.value, member.id)
+    await loadMembers(selectedCourseId.value)
+  } catch (error) {
+    memberActionError.value = error instanceof Error ? error.message : '成员移除失败'
+  } finally {
+    savingMemberMutation.value = false
+  }
+}
+
+function canChangeMemberRole(member: CourseMemberVO) {
+  if (!selectedCourse.value) return false
+  if (selectedCourse.value.myRole !== 'owner') return false
+  if (member.userId === currentUserId.value) return false
+  return member.role === 'teacher' || member.role === 'student'
+}
+
+function canRemoveMember(member: CourseMemberVO) {
+  if (!selectedCourse.value) return false
+  if (member.userId === currentUserId.value) return false
+  if (selectedCourse.value.myRole === 'owner') {
+    return member.role === 'teacher' || member.role === 'student'
+  }
+  if (selectedCourse.value.myRole === 'teacher') {
+    return member.role === 'student'
+  }
+  return false
+}
+
+function normalizeMemberRoleForm() {
+  memberForm.role = selectedCourse.value?.myRole === 'teacher' ? 'student' : 'student'
 }
 
 async function handleLogout() {
