@@ -18,7 +18,7 @@ import (
 func main() {
 	cfgPath := os.Getenv("APP_CONFIG")
 	if cfgPath == "" {
-		cfgPath = filepath.Join("configs", "config.example.yaml")
+		cfgPath = filepath.Join("configs", "config.yaml")
 	}
 
 	cfg, err := config.Load(cfgPath)
