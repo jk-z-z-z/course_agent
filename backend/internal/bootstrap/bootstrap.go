@@ -14,6 +14,12 @@ import (
 	gormlogger "gorm.io/gorm/logger"
 
 	"course_agent_backend/internal/config"
+	"course_agent_backend/internal/handler"
+	"course_agent_backend/internal/middleware"
+	"course_agent_backend/internal/model"
+	"course_agent_backend/internal/repository"
+	"course_agent_backend/internal/router"
+	"course_agent_backend/internal/service"
 )
 
 type App struct {
@@ -52,10 +58,21 @@ func New(cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("ping redis: %w", err)
 	}
 
+	if err := mysqlClient.DB.AutoMigrate(&model.User{}); err != nil {
+		_ = redisClient.Close()
+		_ = mysqlClient.Close()
+		return nil, fmt.Errorf("migrate mysql: %w", err)
+	}
+
+	userRepo := repository.NewUserRepository(mysqlClient.DB)
+	userService := service.NewUserService(userRepo, redisClient.Client)
+	userHandler := handler.NewUserHandler(userService)
+	authMiddleware := middleware.NewAuthMiddleware(userService)
+
 	addr := net.JoinHostPort(cfg.Server.Host, fmt.Sprintf("%d", cfg.Server.Port))
 	server := &http.Server{
 		Addr:              addr,
-		Handler:           newMux(),
+		Handler:           router.New(userHandler, authMiddleware),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
@@ -194,13 +211,4 @@ func (a *App) Close() error {
 		}
 	}
 	return firstErr
-}
-
-func newMux() http.Handler {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("ok"))
-	})
-	return mux
 }
