@@ -159,6 +159,58 @@ func (h *CourseHandler) AddMember(c *gin.Context) {
 	response.Success(c, member)
 }
 
+func (h *CourseHandler) UpdateMember(c *gin.Context) {
+	courseID, ok := parseUintParam(c, "courseId")
+	if !ok {
+		response.Fail(c, http.StatusBadRequest, apperrors.ErrInvalidParameter.Code, apperrors.ErrInvalidParameter.Message)
+		return
+	}
+	memberID, ok := parseUintParam(c, "memberId")
+	if !ok {
+		response.Fail(c, http.StatusBadRequest, apperrors.ErrInvalidParameter.Code, apperrors.ErrInvalidParameter.Message)
+		return
+	}
+	var req dto.UpdateCourseMemberRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, apperrors.ErrInvalidParameter.Code, apperrors.ErrInvalidParameter.Message)
+		return
+	}
+	userID, ok := authcontext.UserID(c.Request.Context())
+	if !ok || userID == 0 {
+		response.Fail(c, http.StatusUnauthorized, apperrors.ErrUnauthorized.Code, apperrors.ErrUnauthorized.Message)
+		return
+	}
+	member, err := h.service.UpdateMemberRole(c.Request.Context(), userID, courseID, memberID, strings.TrimSpace(req.Role))
+	if err != nil {
+		h.writeError(c, err)
+		return
+	}
+	response.Success(c, member)
+}
+
+func (h *CourseHandler) DeleteMember(c *gin.Context) {
+	courseID, ok := parseUintParam(c, "courseId")
+	if !ok {
+		response.Fail(c, http.StatusBadRequest, apperrors.ErrInvalidParameter.Code, apperrors.ErrInvalidParameter.Message)
+		return
+	}
+	memberID, ok := parseUintParam(c, "memberId")
+	if !ok {
+		response.Fail(c, http.StatusBadRequest, apperrors.ErrInvalidParameter.Code, apperrors.ErrInvalidParameter.Message)
+		return
+	}
+	userID, ok := authcontext.UserID(c.Request.Context())
+	if !ok || userID == 0 {
+		response.Fail(c, http.StatusUnauthorized, apperrors.ErrUnauthorized.Code, apperrors.ErrUnauthorized.Message)
+		return
+	}
+	if err := h.service.RemoveMember(c.Request.Context(), userID, courseID, memberID); err != nil {
+		h.writeError(c, err)
+		return
+	}
+	response.Success(c, nil)
+}
+
 func (h *CourseHandler) writeError(c *gin.Context, err error) {
 	if codeErr, ok := err.(*apperrors.CodeError); ok {
 		status := http.StatusBadRequest
