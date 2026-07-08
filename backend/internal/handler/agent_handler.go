@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 
@@ -200,7 +201,8 @@ func (h *AgentHandler) withCourseUser(c *gin.Context, fn func(userID, courseID u
 }
 
 func (h *AgentHandler) writeError(c *gin.Context, err error) {
-	if codeErr, ok := err.(*apperrors.CodeError); ok {
+	var codeErr *apperrors.CodeError
+	if errors.As(err, &codeErr) {
 		status := http.StatusBadRequest
 		switch codeErr.Code {
 		case apperrors.ErrUnauthorized.Code, apperrors.ErrSessionExpired.Code:
@@ -217,7 +219,8 @@ func (h *AgentHandler) writeError(c *gin.Context, err error) {
 }
 
 func (h *AgentHandler) errorMessage(err error) string {
-	if codeErr, ok := err.(*apperrors.CodeError); ok {
+	var codeErr *apperrors.CodeError
+	if errors.As(err, &codeErr) {
 		return codeErr.Message
 	}
 	return "请求失败"

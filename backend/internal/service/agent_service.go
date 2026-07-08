@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -254,7 +256,9 @@ func (s *AgentService) ask(ctx context.Context, userID, courseID, conversationID
 		Materials:      materials,
 	}, onEvent)
 	if err != nil {
-		return nil, apperrors.ErrAgentUnavailable
+		publicMessage := summarizeAgentRuntimeError(err)
+		log.Printf("agent ask failed: course_id=%d conversation_id=%d user_id=%d agent_name=%q base_error=%v", courseID, conversationID, userID, agentModel.AgentName, err)
+		return nil, fmt.Errorf("%w: %v", apperrors.New(apperrors.ErrAgentUnavailable.Code, publicMessage), err)
 	}
 
 	result := &vo.AgentAskResultVO{ConversationID: conversationID, Question: trimmedQuestion, Answer: answer.Answer, Sources: make([]vo.AgentMessageSourceVO, 0, len(answer.Sources))}
@@ -377,4 +381,26 @@ func truncateConversationTitle(question string) string {
 		return string(runes)
 	}
 	return string(runes[:24]) + "..."
+}
+
+func summarizeAgentRuntimeError(err error) string {
+	message := strings.ToLower(strings.TrimSpace(err.Error()))
+	switch {
+	case strings.Contains(message, "incorrect api key provided"):
+		return "Agent API Key 无效，请检查百炼密钥配置"
+	case strings.Contains(message, "free quota has been exhausted"):
+		return "Agent 调用额度已耗尽，请检查百炼额度或计费配置"
+	case strings.Contains(message, "status code: 401"):
+		return "Agent 鉴权失败，请检查百炼 API Key"
+	case strings.Contains(message, "status code: 403"):
+		return "Agent 当前无可用调用权限，请检查额度、计费或模型授权"
+	case strings.Contains(message, "does not support tool calling"):
+		return "当前模型不支持工具调用，请更换支持 tool calling 的模型"
+	case strings.Contains(message, "context deadline exceeded"):
+		return "Agent 响应超时，请稍后重试"
+	case strings.Contains(message, "context canceled"):
+		return "Agent 请求已取消"
+	default:
+		return apperrors.ErrAgentUnavailable.Message
+	}
 }
