@@ -69,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref, watch } from 'vue'
 import MaterialTree from '@/components/MaterialTree.vue'
 import {
   createMaterialFolder,
@@ -128,6 +128,7 @@ async function loadTree() {
 
 async function selectNode(node: MaterialTreeNodeVO) {
   selectedNodeId.value = node.id
+  errorMessage.value = ''
   try {
     selectedDetail.value = await getMaterialDetail(props.token, props.courseId, node.id)
   } catch (error) {
@@ -265,7 +266,14 @@ function findNodeById(nodes: MaterialTreeNodeVO[], id: number): MaterialTreeNode
   return null
 }
 
-onMounted(async () => {
-  await loadTree()
-})
+watch(
+  () => [props.courseId, props.token],
+  async () => {
+    selectedNodeId.value = null
+    selectedDetail.value = null
+    errorMessage.value = ''
+    await loadTree()
+  },
+  { immediate: true },
+)
 </script>

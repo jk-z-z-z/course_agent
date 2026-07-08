@@ -181,6 +181,7 @@
 
         <CourseMaterialsPanel
           v-if="selectedCourse && token"
+          :key="selectedCourse.id"
           :course-id="selectedCourse.id"
           :token="token"
           :can-manage="canEditCourse"
