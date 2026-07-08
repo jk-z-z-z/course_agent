@@ -79,6 +79,17 @@ func (r *MaterialRepository) ListActiveNodesByCourseID(ctx context.Context, cour
 	return nodes, nil
 }
 
+func (r *MaterialRepository) ListActiveFileNodesByCourseID(ctx context.Context, courseID uint64) ([]model.CourseMaterialNode, error) {
+	var nodes []model.CourseMaterialNode
+	if err := r.db.WithContext(ctx).
+		Where("course_id = ? AND is_deleted = ? AND node_type = ?", courseID, false, "file").
+		Order("id ASC").
+		Find(&nodes).Error; err != nil {
+		return nil, err
+	}
+	return nodes, nil
+}
+
 func (r *MaterialRepository) GetActiveNodeByID(ctx context.Context, courseID, nodeID uint64) (*model.CourseMaterialNode, error) {
 	var node model.CourseMaterialNode
 	if err := r.db.WithContext(ctx).

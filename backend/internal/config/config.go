@@ -16,6 +16,7 @@ type Config struct {
 	MySQL   MySQLConfig   `yaml:"mysql"`
 	Redis   RedisConfig   `yaml:"redis"`
 	Storage StorageConfig `yaml:"storage"`
+	Agent   AgentConfig   `yaml:"agent"`
 }
 
 type ServerConfig struct {
@@ -41,6 +42,14 @@ type RedisConfig struct {
 type StorageConfig struct {
 	RootPath   string `yaml:"rootPath"`
 	QuotaBytes int64  `yaml:"quotaBytes"`
+}
+
+type AgentConfig struct {
+	BaseURL          string `yaml:"baseUrl"`
+	APIKey           string `yaml:"apiKey"`
+	Model            string `yaml:"model"`
+	DefaultAgentName string `yaml:"defaultAgentName"`
+	PromptTemplate   string `yaml:"promptTemplate"`
 }
 
 func Load(path string) (*Config, error) {
@@ -89,6 +98,12 @@ func applyDefaults(cfg *Config) {
 	}
 	if cfg.Storage.QuotaBytes == 0 {
 		cfg.Storage.QuotaBytes = 1 << 30
+	}
+	if strings.TrimSpace(cfg.Agent.DefaultAgentName) == "" {
+		cfg.Agent.DefaultAgentName = "课程助教"
+	}
+	if strings.TrimSpace(cfg.Agent.PromptTemplate) == "" {
+		cfg.Agent.PromptTemplate = "你是本课程的助教，只能基于当前课程资料回答问题。如果资料不足以支持结论，明确说明。回答请尽量引用资料原文片段。"
 	}
 }
 
@@ -149,6 +164,21 @@ func overrideFromEnv(cfg *Config) error {
 			return fmt.Errorf("invalid APP_STORAGE_QUOTA_BYTES: %w", err)
 		}
 		cfg.Storage.QuotaBytes = value
+	}
+	if v := os.Getenv("APP_AGENT_BASE_URL"); v != "" {
+		cfg.Agent.BaseURL = v
+	}
+	if v := os.Getenv("APP_AGENT_API_KEY"); v != "" {
+		cfg.Agent.APIKey = v
+	}
+	if v := os.Getenv("APP_AGENT_MODEL"); v != "" {
+		cfg.Agent.Model = v
+	}
+	if v := os.Getenv("APP_AGENT_DEFAULT_NAME"); v != "" {
+		cfg.Agent.DefaultAgentName = v
+	}
+	if v := os.Getenv("APP_AGENT_PROMPT_TEMPLATE"); v != "" {
+		cfg.Agent.PromptTemplate = v
 	}
 
 	return nil
