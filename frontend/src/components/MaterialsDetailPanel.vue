@@ -5,7 +5,6 @@
         <div>
           <h4 class="material-title">{{ detail.nodeName }}</h4>
         </div>
-        <button v-if="canManage" class="button danger compact" @click="$emit('remove')">删除</button>
       </div>
 
       <div v-if="detail.nodeType === 'folder'" class="materials-folder-view">
@@ -62,16 +61,11 @@ import type { MaterialDetailVO, MaterialTreeNodeVO } from '@/types/material'
 
 const props = defineProps<{
   detail: MaterialDetailVO | null
-  canManage: boolean
   loadingBlob: boolean
   previewUrl: string
   previewText: string
   previewMimeType: string
   tree: MaterialTreeNodeVO[]
-}>()
-
-defineEmits<{
-  remove: []
 }>()
 
 const folderChildren = computed(() => {

@@ -1640,7 +1640,9 @@ h3 {
 
 .tree-item {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
+  align-items: center;
 }
 
 .tree-branch {
@@ -1672,20 +1674,28 @@ h3 {
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .tree-node-name {
   display: grid;
   gap: 2px;
+  min-width: 0;
 }
 
 .tree-node-name strong {
   color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tree-node-name small {
   color: #6b7280;
   font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tree-node-icon {
@@ -1713,6 +1723,16 @@ h3 {
   color: #6b7280;
 }
 
+.tree-node-delete {
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  color: #c2414b;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .tree-children {
   margin-left: 18px;
   padding-left: 10px;
@@ -1722,6 +1742,9 @@ h3 {
 .material-title {
   margin: 0;
   font-size: 24px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .top-gap {
@@ -1770,6 +1793,15 @@ h3 {
 
   .materials-page-layout {
     grid-template-columns: 1fr;
+  }
+
+  .tree-item {
+    grid-template-columns: 1fr;
+  }
+
+  .tree-node-delete {
+    justify-self: end;
+    padding-right: 4px;
   }
 }
 

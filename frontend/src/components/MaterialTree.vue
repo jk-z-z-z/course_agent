@@ -18,11 +18,21 @@
         <span class="tree-node-meta">{{ node.type === 'file' ? formatFileSize(node.fileSize ?? 0) : `${node.children?.length ?? 0} 项` }}</span>
       </button>
 
+      <button
+        v-if="canManage"
+        class="tree-node-delete"
+        @click.stop="$emit('remove', node)"
+      >
+        删除
+      </button>
+
       <div v-if="node.children?.length" class="tree-children">
         <MaterialTree
           :nodes="node.children"
           :selected-id="selectedId"
+          :can-manage="canManage"
           @select="$emit('select', $event)"
+          @remove="$emit('remove', $event)"
         />
       </div>
     </div>
@@ -37,10 +47,12 @@ defineOptions({ name: 'MaterialTree' })
 defineProps<{
   nodes: MaterialTreeNodeVO[]
   selectedId?: number | null
+  canManage: boolean
 }>()
 
 defineEmits<{
   select: [node: MaterialTreeNodeVO]
+  remove: [node: MaterialTreeNodeVO]
 }>()
 
 function formatFileSize(size: number) {

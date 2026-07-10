@@ -10,13 +10,11 @@
 
         <MaterialsDetailPanel
           :detail="selectedDetail"
-          :can-manage="canManage"
           :loading-blob="loadingBlob"
           :preview-url="previewUrl"
           :preview-text="previewText"
           :preview-mime-type="previewMimeType"
           :tree="tree"
-          @remove="removeNode"
         />
       </section>
 
@@ -39,7 +37,13 @@
           />
 
           <section class="materials-tree-panel">
-            <MaterialTree :nodes="tree" :selected-id="selectedNodeId" @select="selectNode" />
+            <MaterialTree
+              :nodes="tree"
+              :selected-id="selectedNodeId"
+              :can-manage="canManage"
+              @select="selectNode"
+              @remove="removeTreeNode"
+            />
           </section>
         </div>
       </aside>
@@ -177,14 +181,17 @@ async function handleUpload(event: Event) {
   }
 }
 
-async function removeNode() {
-  if (!props.canManage || !selectedDetail.value) return
-  const confirmed = window.confirm(`确认删除“${selectedDetail.value.nodeName}”吗？`)
+async function removeTreeNode(node: MaterialTreeNodeVO) {
+  if (!props.canManage) return
+  const confirmed = window.confirm(`确认删除“${node.name}”吗？`)
   if (!confirmed) return
   try {
-    await deleteMaterialNode(props.token, props.courseId, selectedDetail.value.id)
-    selectedNodeId.value = null
-    selectedDetail.value = null
+    await deleteMaterialNode(props.token, props.courseId, node.id)
+    if (selectedNodeId.value === node.id) {
+      selectedNodeId.value = null
+      selectedDetail.value = null
+      resetPreview()
+    }
     await loadTree()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '资料删除失败'
