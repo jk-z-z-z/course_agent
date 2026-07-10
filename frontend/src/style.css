@@ -27,13 +27,14 @@ html,
 body,
 #app {
   margin: 0;
-  min-height: 100%;
+  height: 100%;
 }
 
 body {
-  min-height: 100vh;
+  min-height: 100dvh;
   color: var(--text-main);
   background: #ffffff;
+  overflow: hidden;
 }
 
 a {
@@ -54,7 +55,8 @@ button:disabled {
 }
 
 .app-shell {
-  min-height: 100vh;
+  height: 100%;
+  min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr;
@@ -83,16 +85,21 @@ button:disabled {
 .app-shell-main {
   grid-area: main;
   padding: 20px 24px 24px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .basic-layout {
-  min-height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 84px minmax(0, 1fr);
   background: #ffffff;
+  overflow: hidden;
 }
 
 .basic-layout-header {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 20;
   height: 84px;
   padding: 0 24px;
@@ -102,8 +109,8 @@ button:disabled {
 }
 
 .basic-layout-content {
-  min-height: calc(100vh - 84px);
-  padding-top: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .platform-top-nav,
@@ -472,6 +479,9 @@ button:disabled {
 
 .page-section.course-dashboard {
   gap: 0;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .course-dashboard {
@@ -620,6 +630,18 @@ button:disabled {
   height: 100%;
   overflow: auto;
   padding: 4px 6px 0 0;
+}
+
+.course-layout-shell {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.course-workspace-stage {
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
 }
 
 .course-card-panel {
@@ -1240,6 +1262,33 @@ h3 {
 }
 
 @media (max-width: 980px) {
+  html,
+  body,
+  #app {
+    height: auto;
+  }
+
+  body {
+    overflow: auto;
+  }
+
+  .basic-layout {
+    height: auto;
+    min-height: 100vh;
+    grid-template-rows: auto 1fr;
+    overflow: visible;
+  }
+
+  .basic-layout-content {
+    overflow: visible;
+  }
+
+  .app-shell,
+  .app-shell-main {
+    height: auto;
+    overflow: visible;
+  }
+
   .platform-top-nav {
     padding: 14px 0 0;
   }
