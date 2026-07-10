@@ -12,6 +12,10 @@
           :detail="selectedDetail"
           :can-manage="canManage"
           :loading-blob="loadingBlob"
+          :preview-url="previewUrl"
+          :preview-text="previewText"
+          :preview-mime-type="previewMimeType"
+          :tree="tree"
           @rename="renameNode"
           @remove="removeNode"
           @preview="handlePreview"
@@ -47,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { onBeforeUnmount, ref, watch } from 'vue'
 import MaterialTree from '@/components/MaterialTree.vue'
 import MaterialsDetailPanel from '@/components/MaterialsDetailPanel.vue'
 import MaterialsToolbar from '@/components/MaterialsToolbar.vue'
@@ -77,6 +81,9 @@ const loadingBlob = ref(false)
 const errorMessage = ref('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const sidebarCollapsed = ref(false)
+const previewUrl = ref('')
+const previewText = ref('')
+const previewMimeType = ref('')
 
 async function loadTree() {
   loadingTree.value = true
@@ -111,6 +118,7 @@ async function selectNode(node: MaterialTreeNodeVO) {
   errorMessage.value = ''
   try {
     selectedDetail.value = await getMaterialDetail(props.token, props.courseId, node.id)
+    await loadInlinePreview()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '资料详情加载失败'
   }
@@ -124,6 +132,27 @@ async function handlePreview() {
     const url = URL.createObjectURL(blob)
     window.open(url, '_blank', 'noopener,noreferrer')
     window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '资料预览失败'
+  } finally {
+    loadingBlob.value = false
+  }
+}
+
+async function loadInlinePreview() {
+  resetPreview()
+  if (!selectedDetail.value || selectedDetail.value.nodeType !== 'file') return
+
+  loadingBlob.value = true
+  try {
+    const blob = await previewMaterial(props.token, props.courseId, selectedDetail.value.id)
+    previewMimeType.value = blob.type || selectedDetail.value.mimeType || ''
+
+    if (previewMimeType.value.startsWith('text/') || isCodeLikeFile(selectedDetail.value.fileExt)) {
+      previewText.value = await blob.text()
+    } else {
+      previewUrl.value = URL.createObjectURL(blob)
+    }
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '资料预览失败'
   } finally {
@@ -212,6 +241,15 @@ async function removeNode() {
   }
 }
 
+function resetPreview() {
+  if (previewUrl.value) {
+    URL.revokeObjectURL(previewUrl.value)
+  }
+  previewUrl.value = ''
+  previewText.value = ''
+  previewMimeType.value = ''
+}
+
 function currentFolderTargetId() {
   if (!selectedDetail.value) return undefined
   if (selectedDetail.value.nodeType === 'folder') return selectedDetail.value.id
@@ -236,12 +274,24 @@ function findNodeById(nodes: MaterialTreeNodeVO[], id: number): MaterialTreeNode
   return null
 }
 
+function isCodeLikeFile(fileExt?: string) {
+  if (!fileExt) return false
+  return ['txt', 'md', 'json', 'js', 'ts', 'tsx', 'jsx', 'css', 'scss', 'html', 'xml', 'yml', 'yaml'].includes(
+    fileExt.toLowerCase(),
+  )
+}
+
+onBeforeUnmount(() => {
+  resetPreview()
+})
+
 watch(
   () => [props.courseId, props.token],
   async () => {
     selectedNodeId.value = null
     selectedDetail.value = null
     errorMessage.value = ''
+    resetPreview()
     await loadTree()
   },
   { immediate: true },
