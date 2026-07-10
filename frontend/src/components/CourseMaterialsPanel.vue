@@ -21,13 +21,14 @@
 
       <aside class="materials-sidebar" :class="{ collapsed: sidebarCollapsed }">
         <button class="materials-sidebar-toggle" @click="sidebarCollapsed = !sidebarCollapsed">
-          {{ sidebarCollapsed ? '展开资料栏' : '收起资料栏' }}
+          <span class="materials-sidebar-toggle-arrow">{{ sidebarCollapsed ? '‹' : '›' }}</span>
+          <span v-if="!sidebarCollapsed">收起资料栏</span>
+          <span v-else>资料栏</span>
         </button>
 
-        <div v-if="!sidebarCollapsed" class="materials-sidebar-body">
+        <div class="materials-sidebar-body" :class="{ hidden: sidebarCollapsed }">
           <div class="materials-pane-head">
             <div>
-              <p class="eyebrow">Folders</p>
               <h4 class="materials-pane-title">资料导航</h4>
             </div>
           </div>
