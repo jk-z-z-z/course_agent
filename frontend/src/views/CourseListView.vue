@@ -10,6 +10,10 @@
 
     <div class="course-dashboard-grid">
       <aside class="course-filter-panel">
+        <div class="course-filter-actions">
+          <button class="button primary course-filter-create" @click="openCreateDialog">创建课程</button>
+        </div>
+
         <div class="course-filter-nav">
           <button
             v-for="item in filters"
