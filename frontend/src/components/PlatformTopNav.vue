@@ -10,15 +10,15 @@
 
     <nav class="platform-top-links">
       <RouterLink to="/courses" class="platform-link">我的课程</RouterLink>
-      <button class="platform-link ghost-link" type="button">创建课程</button>
-      <button class="platform-link ghost-link" type="button">消息中心</button>
+      <button class="platform-link ghost-link" type="button" @click="openCreateCourse">创建课程</button>
+      <button class="platform-link ghost-link" type="button" @click="togglePanel('messages')">消息中心</button>
     </nav>
 
     <div class="platform-top-actions">
-      <button class="platform-icon-button" type="button" aria-label="搜索">
+      <button class="platform-icon-button" type="button" aria-label="搜索" @click="togglePanel('search')">
         <span>⌕</span>
       </button>
-      <button class="platform-icon-button has-dot" type="button" aria-label="通知">
+      <button class="platform-icon-button has-dot" type="button" aria-label="通知" @click="togglePanel('notifications')">
         <span>◌</span>
       </button>
 
@@ -38,6 +38,26 @@
         </div>
       </div>
     </div>
+
+    <div v-if="activePanel" class="platform-floating-panel">
+      <template v-if="activePanel === 'messages'">
+        <p class="eyebrow">Messages</p>
+        <h3>消息中心</h3>
+        <p class="muted-copy">消息中心入口已接通，后续可以接真实消息列表。</p>
+      </template>
+
+      <template v-else-if="activePanel === 'notifications'">
+        <p class="eyebrow">Notifications</p>
+        <h3>通知</h3>
+        <p class="muted-copy">当前没有新的系统通知。</p>
+      </template>
+
+      <template v-else>
+        <p class="eyebrow">Search</p>
+        <h3>全局搜索</h3>
+        <p class="muted-copy">搜索交互已激活，后续可接课程与资料检索。</p>
+      </template>
+    </div>
   </div>
 </template>
 
@@ -50,19 +70,34 @@ import { useAuth } from '@/composables/useAuth'
 const router = useRouter()
 const auth = useAuth()
 const menuOpen = ref(false)
+const activePanel = ref<'messages' | 'notifications' | 'search' | null>(null)
 const userInitial = computed(() => auth.user.value?.username?.slice(0, 1).toUpperCase() || 'U')
 
 async function goCourses() {
   menuOpen.value = false
+  activePanel.value = null
   await router.push('/courses')
 }
 
 function toggleMenu() {
+  activePanel.value = null
   menuOpen.value = !menuOpen.value
+}
+
+function togglePanel(panel: 'messages' | 'notifications' | 'search') {
+  menuOpen.value = false
+  activePanel.value = activePanel.value === panel ? null : panel
+}
+
+async function openCreateCourse() {
+  menuOpen.value = false
+  activePanel.value = null
+  await router.push('/courses?create=1')
 }
 
 async function handleLogout() {
   menuOpen.value = false
+  activePanel.value = null
   if (auth.token.value) {
     await logout(auth.token.value)
   }

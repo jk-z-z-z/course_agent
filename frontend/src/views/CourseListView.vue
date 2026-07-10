@@ -121,7 +121,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import AppShell from '@/components/AppShell.vue'
 import PlatformTopNav from '@/components/PlatformTopNav.vue'
 import { createCourse, listCourses } from '@/api/course'
@@ -132,6 +132,7 @@ import { formatDateTime } from '@/utils/date'
 type FilterValue = 'all' | 'owned' | 'joined'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuth()
 const courses = ref<CourseVO[]>([])
 const loadingCourses = ref(false)
@@ -162,7 +163,10 @@ const filteredCourses = computed(() => {
   return courses.value
 })
 
-onMounted(loadCourses)
+onMounted(async () => {
+  await loadCourses()
+  maybeOpenCreateDialogFromQuery()
+})
 
 async function loadCourses() {
   if (!auth.token.value) return
@@ -188,6 +192,9 @@ function openCreateDialog() {
 function closeCreateDialog() {
   if (savingCourse.value) return
   courseDialogOpen.value = false
+  if (route.query.create) {
+    void router.replace('/courses')
+  }
 }
 
 async function submitCourseForm() {
@@ -212,6 +219,12 @@ async function submitCourseForm() {
 
 async function enterCourse(courseId: number) {
   await router.push(`/courses/${courseId}/overview`)
+}
+
+function maybeOpenCreateDialogFromQuery() {
+  if (route.query.create === '1') {
+    openCreateDialog()
+  }
 }
 
 function roleLabel(role?: CourseRole) {
