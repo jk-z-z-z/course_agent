@@ -241,6 +241,116 @@ button:disabled {
     rgba(255, 255, 255, 0.82);
 }
 
+.course-dashboard-grid {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 20px;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.course-filter-panel,
+.course-grid-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.course-filter-nav,
+.course-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.course-filter-button,
+.course-card-panel {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.course-filter-button {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  padding: 18px;
+  cursor: pointer;
+}
+
+.course-filter-button strong {
+  color: #111827;
+}
+
+.course-filter-button span {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.course-filter-button.active {
+  border-color: rgba(18, 183, 154, 0.35);
+  background: linear-gradient(135deg, rgba(24, 195, 165, 0.14), rgba(111, 240, 218, 0.08));
+}
+
+.course-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.course-card-panel {
+  overflow: hidden;
+}
+
+.course-card-cover {
+  min-height: 132px;
+  padding: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  background: linear-gradient(135deg, rgba(111, 240, 218, 0.28), rgba(219, 247, 255, 0.75));
+}
+
+.course-card-cover.is-archived {
+  background: linear-gradient(135deg, rgba(255, 214, 156, 0.38), rgba(255, 246, 220, 0.9));
+}
+
+.course-card-cover.is-deleted {
+  background: linear-gradient(135deg, rgba(255, 191, 191, 0.35), rgba(255, 240, 240, 0.9));
+}
+
+.course-card-code {
+  color: #0f766e;
+  font-weight: 700;
+}
+
+.course-card-body {
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+}
+
+.course-card-body h3 {
+  color: #111827;
+}
+
+.course-card-copy {
+  margin: 10px 0 0;
+  color: #4b5563;
+  line-height: 1.7;
+}
+
+.course-card-meta {
+  display: grid;
+  gap: 8px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.top-gap {
+  margin-top: 8px;
+}
+
 .card {
   border: 1px solid var(--border-strong);
   border-radius: 24px;
@@ -547,6 +657,11 @@ h3 {
 }
 
 @media (max-width: 980px) {
+  .course-dashboard-grid,
+  .course-grid {
+    grid-template-columns: 1fr;
+  }
+
   .app-shell.with-sidebar {
     grid-template-columns: 1fr;
     grid-template-areas:
