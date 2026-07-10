@@ -1331,6 +1331,11 @@ h3 {
   gap: 18px;
 }
 
+.agent-main-panel {
+  display: grid;
+  gap: 18px;
+}
+
 .agent-sidebar-panel,
 .agent-chat-panel,
 .agent-summary-panel,

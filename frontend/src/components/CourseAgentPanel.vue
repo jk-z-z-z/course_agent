@@ -18,142 +18,50 @@
     <p v-if="overviewError" class="error">{{ overviewError }}</p>
 
     <div v-if="agent" class="agent-grid">
-      <section class="agent-sidebar-panel">
-        <div class="panel agent-summary-panel">
-          <div class="profile-row">
-            <div>
-              <p class="label">Agent 名称</p>
-              <p class="value">{{ agent.agentName }}</p>
-            </div>
-            <span class="pill" :class="agent.status === 'enabled' ? '' : 'subtle'">
-              {{ agent.status === 'enabled' ? '已启用' : '已停用' }}
-            </span>
-          </div>
-          <p class="muted-copy top-gap">范围：{{ agent.retrievalScope === 'course_all' ? '课程全部资料' : agent.retrievalScope }}</p>
-          <p class="muted-copy">最近更新：{{ formatDateTime(agent.updatedAt) }}</p>
-        </div>
+      <AgentConfigPanel
+        :agent="agent"
+        :can-manage="canManage"
+        :saving-config="savingConfig"
+        :config-error="configError"
+        :config-form="configForm"
+        @submit="submitConfig"
+        @update:agent-name="configForm.agentName = $event"
+        @update:prompt-template="configForm.promptTemplate = $event"
+        @update:status="configForm.status = $event as AgentStatus"
+      />
 
-        <div v-if="canManage" class="panel">
-          <div class="section-head section-head-top compact-head">
-            <div>
-              <p class="label">配置</p>
-              <p class="muted-copy">教师和创建者可调整基础行为。</p>
-            </div>
-          </div>
+      <div class="agent-main-panel">
+        <AgentConversationList
+          :conversations="conversations"
+          :selected-conversation-id="selectedConversationId"
+          :error-message="conversationError"
+          @select="selectConversation"
+        />
 
-          <form class="form agent-config-form" @submit.prevent="submitConfig">
-            <label class="field">
-              <span>Agent 名称</span>
-              <input v-model.trim="configForm.agentName" type="text" />
-            </label>
-
-            <label class="field">
-              <span>状态</span>
-              <select v-model="configForm.status">
-                <option value="enabled">启用</option>
-                <option value="disabled">停用</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span>提示词</span>
-              <textarea v-model.trim="configForm.promptTemplate"></textarea>
-            </label>
-
-            <p v-if="configError" class="error">{{ configError }}</p>
-            <button class="button ghost compact" type="submit" :disabled="savingConfig">
-              {{ savingConfig ? '保存中' : '保存配置' }}
-            </button>
-          </form>
-        </div>
-
-        <div class="panel agent-conversation-panel">
-          <div class="section-head compact-head">
-            <div>
-              <p class="label">会话列表</p>
-              <p class="muted-copy">学生仅可见自己的会话。</p>
-            </div>
-          </div>
-
-          <p v-if="conversationError" class="error">{{ conversationError }}</p>
-          <p v-else-if="!conversations.length" class="muted-copy">暂无会话，先新建一个。</p>
-
-          <div v-else class="agent-conversation-list">
-            <button
-              v-for="conversation in conversations"
-              :key="conversation.id"
-              class="agent-conversation-item"
-              :class="{ active: conversation.id === selectedConversationId }"
-              @click="selectConversation(conversation.id)"
-            >
-              <span class="agent-conversation-title">{{ conversation.conversationTitle || '未命名会话' }}</span>
-              <span class="agent-conversation-meta">{{ formatDateTime(conversation.updatedAt) }}</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel agent-chat-panel">
-        <div class="section-head section-head-top compact-head">
-          <div>
-            <p class="label">当前会话</p>
-            <h3 class="agent-chat-title">{{ currentConversationTitle }}</h3>
-          </div>
-          <button
-            v-if="selectedConversationId"
-            class="button ghost compact"
-            @click="reloadConversation"
-            :disabled="loadingConversation || sendingQuestion"
-          >
-            {{ loadingConversation ? '加载中' : '刷新会话' }}
-          </button>
-        </div>
-
-        <p v-if="chatError" class="error">{{ chatError }}</p>
-
-        <div v-if="selectedConversationDetail" class="agent-chat-shell">
-          <div class="agent-messages">
-            <article
-              v-for="message in selectedConversationDetail.messages"
-              :key="message.id"
-              class="agent-message"
-              :class="message.senderType === 'user' ? 'user' : 'agent'"
-            >
-              <div class="agent-message-head">
-                <span>{{ message.senderType === 'user' ? '我' : agent?.agentName || '课程助教' }}</span>
-                <span class="agent-message-time">{{ formatDateTime(message.createdAt) }}</span>
-              </div>
-              <p class="agent-message-content">{{ message.messageContent }}</p>
-              <div v-if="message.sources?.length" class="agent-source-list">
-                <div v-for="source in message.sources" :key="`${message.id}-${source.materialNodeId}-${source.fileName}`" class="agent-source-item">
-                  <strong>{{ source.fileName || `资料 ${source.materialNodeId}` }}</strong>
-                  <p>{{ source.snippetText }}</p>
-                </div>
-              </div>
-            </article>
-          </div>
-
-          <form class="agent-ask-form" @submit.prevent="submitQuestion">
-            <label class="field">
-              <span>向课程助教提问</span>
-              <textarea v-model.trim="questionForm.question" placeholder="例如：帮我总结本课程资料中对课程项目的要求"></textarea>
-            </label>
-            <button class="button primary" type="submit" :disabled="sendingQuestion || !agent || agent.status === 'disabled'">
-              {{ sendingQuestion ? '流式发送中' : agent?.status === 'disabled' ? 'Agent 已停用' : '发送问题' }}
-            </button>
-          </form>
-        </div>
-
-        <div v-else class="empty-state small">
-          <p class="lead">先创建或选择一个会话，然后开始提问。</p>
-        </div>
-      </section>
+        <AgentChatPanel
+          :detail="selectedConversationDetail"
+          :agent-name="agent.agentName"
+          :current-conversation-title="currentConversationTitle"
+          :selected-conversation-id="selectedConversationId"
+          :loading-conversation="loadingConversation"
+          :sending-question="sendingQuestion"
+          :error-message="chatError"
+          :question="questionForm.question"
+          :agent-enabled="agent.status === 'enabled'"
+          @reload="reloadConversation"
+          @submit-question="submitQuestion"
+          @update:question="questionForm.question = $event"
+        />
+      </div>
     </div>
   </article>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import AgentChatPanel from '@/components/AgentChatPanel.vue'
+import AgentConfigPanel from '@/components/AgentConfigPanel.vue'
+import AgentConversationList from '@/components/AgentConversationList.vue'
 import {
   createAgentConversation,
   getAgentConversation,
@@ -170,7 +78,6 @@ import type {
   AgentStatus,
   CourseAgentVO,
 } from '@/types/agent'
-import { formatDateTime } from '@/utils/date'
 
 const props = defineProps<{
   courseId: number
