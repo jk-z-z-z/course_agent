@@ -86,23 +86,26 @@ button:disabled {
 }
 
 .app-shell.dashboard-shell {
-  height: 100vh;
-  grid-template-rows: 10vh 90vh;
-  overflow: visible;
+  height: 100dvh;
+  grid-template-rows: 10dvh minmax(0, 1fr);
+  overflow: hidden;
 }
 
 .app-shell.dashboard-shell .app-shell-top {
   position: relative;
   top: auto;
   padding: 0 2vw;
-  overflow: visible;
+  overflow: hidden;
   min-height: 0;
+  background: #ffffff;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .app-shell.dashboard-shell .app-shell-main {
-  padding: 0 2vw 2vh;
-  overflow: visible;
+  padding: 0 2vw;
+  overflow: hidden;
   min-height: 0;
+  background: #ffffff;
 }
 
 .platform-top-nav,
@@ -124,7 +127,7 @@ button:disabled {
   justify-content: space-between;
   gap: 20px;
   min-height: 100%;
-  padding: 1vh 0;
+  padding: 0;
   position: relative;
   width: 100%;
   margin: 0;
@@ -469,44 +472,46 @@ button:disabled {
   gap: 16px;
 }
 
+.page-section.course-dashboard {
+  gap: 0;
+}
+
 .course-dashboard {
   display: grid;
   height: 100%;
   min-height: 0;
-  gap: 0;
-  grid-template-rows: 20vh 70vh;
-  overflow: visible;
+  gap: 2vh;
+  grid-template-rows: minmax(0, 2fr) minmax(0, 7fr);
+  overflow: hidden;
 }
 
 .course-list-hero {
   min-height: 0;
   height: 100%;
-  padding: 0 2vw;
+  padding: 2vh 0 0;
   border-radius: 0;
   border: 0;
   display: grid;
   align-items: center;
-  background:
-    radial-gradient(circle at 20% 10%, rgba(255, 236, 179, 0.88), transparent 34%),
-    radial-gradient(circle at 76% 28%, rgba(196, 255, 244, 0.86), transparent 28%),
-    linear-gradient(135deg, rgba(249, 250, 251, 0.95), rgba(236, 253, 245, 0.92));
+  background: #ffffff;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .course-list-hero-copy {
-  max-width: 68%;
+  max-width: 60%;
 }
 
 .course-list-hero-copy h1 {
-  font-size: clamp(42px, 4.8vw, 68px);
-  line-height: 0.98;
+  font-size: clamp(32px, 4.2vw, 56px);
+  line-height: 1.02;
   color: #0f172a;
 }
 
 .course-list-hero-copy .lead {
   max-width: 760px;
-  margin-top: 20px;
+  margin-top: 12px;
   color: #64748b;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .course-dashboard-grid {
@@ -515,7 +520,7 @@ button:disabled {
   min-height: 0;
   grid-template-columns: minmax(0, 1fr) minmax(0, 4fr);
   gap: 2vw;
-  padding: 2vh 2vw 0;
+  padding: 0;
   overflow: hidden;
 }
 
@@ -523,7 +528,7 @@ button:disabled {
   display: flex;
   gap: 14px;
   align-items: center;
-  margin-top: 24px;
+  margin-top: 16px;
 }
 
 .course-filter-panel,
@@ -544,9 +549,14 @@ button:disabled {
 .course-panel-head {
   display: grid;
   gap: 8px;
-  padding-bottom: 14px;
+  padding-bottom: 12px;
   border-bottom: 1px solid rgba(15, 23, 42, 0.08);
   flex: 0 0 auto;
+}
+
+.course-panel-head h2 {
+  font-size: clamp(18px, 2vw, 24px);
+  line-height: 1.15;
 }
 
 .course-filter-nav,
@@ -582,11 +592,12 @@ button:disabled {
 
 .course-filter-button strong {
   color: #111827;
+  font-size: 16px;
 }
 
 .course-filter-button span {
   color: #6b7280;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .course-filter-button.active {
@@ -610,7 +621,7 @@ button:disabled {
   min-height: 0;
   height: 100%;
   overflow: auto;
-  padding-right: 6px;
+  padding: 4px 6px 0 0;
 }
 
 .course-card-panel {
@@ -1266,13 +1277,14 @@ h3 {
   .course-dashboard {
     height: auto;
     grid-template-rows: auto auto;
+    gap: 20px;
     overflow: visible;
   }
 
   .course-dashboard-grid {
     height: auto;
     grid-template-columns: 1fr;
-    padding: 12px 0 0;
+    padding: 0;
     overflow: visible;
   }
 
