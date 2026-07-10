@@ -5,28 +5,28 @@
     </template>
 
     <section class="page-section course-dashboard">
-      <div class="page-hero course-list-hero">
-        <div>
+      <div class="course-list-hero">
+        <div class="course-list-hero-nav-spacer" />
+
+        <div class="course-list-hero-copy">
           <p class="eyebrow">Dashboard</p>
           <h1>欢迎回来，{{ auth.user.value?.username || '同学' }}</h1>
           <p class="lead">集中管理课程、资料与课程助教，从这里进入每一门课程的详情页面。</p>
-        </div>
 
-        <div class="hero-actions">
-          <button class="button ghost" @click="loadCourses" :disabled="loadingCourses">
-            {{ loadingCourses ? '刷新中' : '刷新课程' }}
-          </button>
-          <button class="button primary" @click="openCreateDialog">创建课程</button>
+          <div class="hero-actions">
+            <button class="button ghost" @click="loadCourses" :disabled="loadingCourses">
+              {{ loadingCourses ? '刷新中' : '刷新课程' }}
+            </button>
+            <button class="button primary" @click="openCreateDialog">创建课程</button>
+          </div>
         </div>
       </div>
 
       <div class="course-dashboard-grid">
-        <article class="content-card course-filter-panel">
-          <div class="section-head">
-            <div>
-              <p class="eyebrow">Filter</p>
-              <h2>课程分类</h2>
-            </div>
+        <aside class="course-filter-panel">
+          <div class="course-panel-head">
+            <p class="eyebrow">Filter</p>
+            <h2>课程分类</h2>
           </div>
 
           <div class="course-filter-nav">
@@ -41,10 +41,10 @@
               <span>{{ item.description }}</span>
             </button>
           </div>
-        </article>
+        </aside>
 
-        <article class="content-card course-grid-panel">
-          <div>
+        <section class="course-grid-panel">
+          <div class="course-panel-head">
             <p class="eyebrow">Courses</p>
             <h2>我的课程</h2>
           </div>
@@ -78,7 +78,7 @@
               </div>
             </article>
           </div>
-        </article>
+        </section>
       </div>
     </section>
 
