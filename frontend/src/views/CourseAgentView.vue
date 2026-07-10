@@ -8,12 +8,29 @@
       </div>
     </div>
 
-    <CourseAgentPanel
-      v-if="course && token"
-      :course-id="course.id"
-      :token="token"
-      :can-manage="canManage"
-    />
+    <div class="agent-page-layout">
+      <CourseAgentPanel
+        v-if="course && token"
+        :course-id="course.id"
+        :token="token"
+        :can-manage="canManage"
+      />
+
+      <aside class="content-card agent-aside-card">
+        <p class="eyebrow">Guide</p>
+        <h2>Agent 使用说明</h2>
+        <div class="permission-guide-list">
+          <div class="permission-guide-item">
+            <strong>教师 / 创建者</strong>
+            <span>可配置 Agent 名称、提示词、状态，以及创建会话入口。</span>
+          </div>
+          <div class="permission-guide-item">
+            <strong>学生</strong>
+            <span>可在自己会话内提问，查看引用资料片段和回答结果。</span>
+          </div>
+        </div>
+      </aside>
+    </div>
   </section>
 </template>
 
