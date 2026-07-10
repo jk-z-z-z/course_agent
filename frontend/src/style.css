@@ -553,11 +553,13 @@ button:disabled {
 
 .course-filter-panel {
   grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
 }
 
 .course-filter-actions {
   padding-top: 8px;
   border-top: 1px solid rgba(15, 23, 42, 0.08);
+  flex: 0 0 auto;
 }
 
 .course-filter-create-row {
@@ -575,6 +577,7 @@ button:disabled {
   align-content: start;
   min-height: 0;
   overflow: auto;
+  padding-right: 6px;
 }
 
 .course-filter-button,
@@ -586,9 +589,9 @@ button:disabled {
 
 .course-filter-button {
   display: grid;
-  gap: 8px;
+  gap: 0;
   text-align: left;
-  padding: 18px 0;
+  padding: 16px 0;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -599,11 +602,6 @@ button:disabled {
 .course-filter-button strong {
   color: #111827;
   font-size: 16px;
-}
-
-.course-filter-button span {
-  color: #6b7280;
-  font-size: 13px;
 }
 
 .course-filter-button.active {

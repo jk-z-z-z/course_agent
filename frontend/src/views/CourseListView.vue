@@ -19,7 +19,6 @@
             @click="selectFilter(item.value)"
           >
             <strong>{{ item.label }}</strong>
-            <span>{{ item.description }}</span>
           </button>
         </div>
 
@@ -30,7 +29,6 @@
             @click="openCreatePanel"
           >
             <strong>创建课程</strong>
-            <span>新建一门课程并进入课程工作区</span>
           </button>
         </div>
       </aside>
@@ -135,10 +133,10 @@ const courseForm = reactive({
 })
 
 const filters = [
-  { value: 'all' as FilterValue, label: '全部课程', description: '查看所有已加入课程' },
-  { value: 'joined' as FilterValue, label: '我参与的', description: '查看教师或学生身份加入的课程' },
-  { value: 'managed' as FilterValue, label: '我管理的', description: '查看我负责管理的课程' },
-  { value: 'owned' as FilterValue, label: '我创建的', description: '仅查看我是创建者的课程' },
+  { value: 'all' as FilterValue, label: '全部课程' },
+  { value: 'joined' as FilterValue, label: '我参与的' },
+  { value: 'managed' as FilterValue, label: '我管理的' },
+  { value: 'owned' as FilterValue, label: '我创建的' },
 ]
 
 const filteredCourses = computed(() => {
