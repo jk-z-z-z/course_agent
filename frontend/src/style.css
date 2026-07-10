@@ -701,6 +701,18 @@ button:disabled {
   gap: 16px;
 }
 
+.course-overview-title-row {
+  display: grid;
+  gap: 10px;
+}
+
+.course-overview-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .overview-copy h2 {
   color: #111827;
 }

@@ -1,10 +1,12 @@
 <template>
   <section class="page-section">
     <div class="course-page-head course-page-head-compact">
-      <div>
+      <div class="course-overview-title-row">
         <p class="eyebrow">Home</p>
-        <h1>{{ course?.courseName || '课程详情' }}</h1>
-        <p class="lead">{{ course?.courseDescription || '当前课程还没有填写课程简介。' }}</p>
+        <div class="course-overview-heading">
+          <h1>{{ course?.courseName || '课程详情' }}</h1>
+          <span v-if="course" class="pill subtle">{{ statusLabel(course.status) }}</span>
+        </div>
       </div>
     </div>
 
@@ -12,10 +14,6 @@
       <article class="workspace-panel overview-main-card">
         <div class="overview-summary">
           <div class="overview-copy">
-            <div class="inline-actions">
-              <span class="pill subtle">{{ roleLabel(course.myRole) }}</span>
-              <span class="pill subtle">{{ statusLabel(course.status) }}</span>
-            </div>
             <p class="lead overview-lead">{{ course.courseDescription || '当前课程还没有填写课程简介。' }}</p>
           </div>
         </div>
@@ -56,7 +54,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { listCourseMembers } from '@/api/course'
 import { useCourseContext } from '@/composables/useCourseContext'
-import type { CourseRole, CourseStatus } from '@/types/course'
+import type { CourseStatus } from '@/types/course'
 import { formatDateTime } from '@/utils/date'
 
 const context = useCourseContext()
@@ -72,19 +70,6 @@ async function loadMembersCount() {
     membersCount.value = members.length
   } catch {
     membersCount.value = 0
-  }
-}
-
-function roleLabel(role?: CourseRole) {
-  switch (role) {
-    case 'owner':
-      return '创建者'
-    case 'teacher':
-      return '教师'
-    case 'student':
-      return '学生'
-    default:
-      return '成员'
   }
 }
 
