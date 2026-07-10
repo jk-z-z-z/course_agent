@@ -10,29 +10,69 @@
 
     <div class="course-dashboard-grid">
       <aside class="course-filter-panel">
-        <div class="course-filter-actions">
-          <button class="course-filter-button course-filter-create-row" @click="openCreateDialog">
-            <strong>创建课程</strong>
-            <span>新建一门课程并进入课程工作区</span>
-          </button>
-        </div>
-
         <div class="course-filter-nav">
           <button
             v-for="item in filters"
             :key="item.value"
             class="course-filter-button"
-            :class="{ active: activeFilter === item.value }"
-            @click="activeFilter = item.value"
+            :class="{ active: activeFilter === item.value && viewMode === 'list' }"
+            @click="selectFilter(item.value)"
           >
             <strong>{{ item.label }}</strong>
             <span>{{ item.description }}</span>
           </button>
         </div>
+
+        <div class="course-filter-actions">
+          <button
+            class="course-filter-button course-filter-create-row"
+            :class="{ active: viewMode === 'create' }"
+            @click="openCreatePanel"
+          >
+            <strong>创建课程</strong>
+            <span>新建一门课程并进入课程工作区</span>
+          </button>
+        </div>
       </aside>
 
       <section class="course-grid-panel">
-        <div class="course-grid-scroll">
+        <div v-if="viewMode === 'create'" class="course-create-panel">
+          <div class="course-create-head">
+            <div>
+              <p class="eyebrow">Create Course</p>
+              <h2>创建课程</h2>
+            </div>
+            <button class="button ghost compact" @click="closeCreatePanel" :disabled="savingCourse">返回课程列表</button>
+          </div>
+
+          <form class="form course-create-form" @submit.prevent="submitCourseForm">
+            <label class="field">
+              <span>课程编号</span>
+              <input v-model.trim="courseForm.courseCode" type="text" />
+            </label>
+
+            <label class="field">
+              <span>课程名称</span>
+              <input v-model.trim="courseForm.courseName" type="text" />
+            </label>
+
+            <label class="field">
+              <span>课程简介</span>
+              <textarea v-model.trim="courseForm.courseDescription" />
+            </label>
+
+            <p v-if="formError" class="error">{{ formError }}</p>
+
+            <div class="inline-actions">
+              <button class="button ghost" type="button" @click="closeCreatePanel" :disabled="savingCourse">取消</button>
+              <button class="button primary" type="submit" :disabled="savingCourse">
+                {{ savingCourse ? '创建中...' : '确认创建' }}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div v-else class="course-grid-scroll">
           <p v-if="errorMessage" class="error top-gap">{{ errorMessage }}</p>
           <p v-else-if="!filteredCourses.length && !loadingCourses" class="muted-copy top-gap">
             当前筛选下还没有课程，先创建一门课程开始使用。
@@ -65,41 +105,6 @@
         </div>
       </section>
     </div>
-
-    <div v-if="courseDialogOpen" class="modal-backdrop" @click.self="closeCreateDialog">
-      <section class="modal-card card">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">Create Course</p>
-            <h3>创建课程</h3>
-          </div>
-          <button class="button ghost compact" @click="closeCreateDialog">关闭</button>
-        </div>
-
-        <form class="form" @submit.prevent="submitCourseForm">
-          <label class="field">
-            <span>课程编号</span>
-            <input v-model.trim="courseForm.courseCode" type="text" />
-          </label>
-
-          <label class="field">
-            <span>课程名称</span>
-            <input v-model.trim="courseForm.courseName" type="text" />
-          </label>
-
-          <label class="field">
-            <span>课程简介</span>
-            <textarea v-model.trim="courseForm.courseDescription" />
-          </label>
-
-          <p v-if="formError" class="error">{{ formError }}</p>
-
-          <button class="button primary" type="submit" :disabled="savingCourse">
-            {{ savingCourse ? '创建中...' : '确认创建' }}
-          </button>
-        </form>
-      </section>
-    </div>
   </section>
 </template>
 
@@ -119,10 +124,10 @@ const auth = useAuth()
 const courses = ref<CourseVO[]>([])
 const loadingCourses = ref(false)
 const savingCourse = ref(false)
-const courseDialogOpen = ref(false)
 const errorMessage = ref('')
 const formError = ref('')
 const activeFilter = ref<FilterValue>('all')
+const viewMode = ref<'list' | 'create'>('list')
 const courseForm = reactive({
   courseCode: '',
   courseName: '',
@@ -151,7 +156,7 @@ const filteredCourses = computed(() => {
 
 onMounted(async () => {
   await loadCourses()
-  maybeOpenCreateDialogFromQuery()
+  maybeOpenCreatePanelFromQuery()
 })
 
 async function loadCourses() {
@@ -167,17 +172,17 @@ async function loadCourses() {
   }
 }
 
-function openCreateDialog() {
-  courseDialogOpen.value = true
+function openCreatePanel() {
+  viewMode.value = 'create'
   formError.value = ''
   courseForm.courseCode = ''
   courseForm.courseName = ''
   courseForm.courseDescription = ''
 }
 
-function closeCreateDialog() {
+function closeCreatePanel() {
   if (savingCourse.value) return
-  courseDialogOpen.value = false
+  viewMode.value = 'list'
   if (route.query.create) {
     void router.replace('/courses')
   }
@@ -193,7 +198,7 @@ async function submitCourseForm() {
       courseName: courseForm.courseName,
       courseDescription: courseForm.courseDescription,
     })
-    courseDialogOpen.value = false
+    viewMode.value = 'list'
     await loadCourses()
     await enterCourse(created.id)
   } catch (error) {
@@ -207,10 +212,15 @@ async function enterCourse(courseId: number) {
   await router.push(`/courses/${courseId}/overview`)
 }
 
-function maybeOpenCreateDialogFromQuery() {
+function maybeOpenCreatePanelFromQuery() {
   if (route.query.create === '1') {
-    openCreateDialog()
+    openCreatePanel()
   }
+}
+
+function selectFilter(value: FilterValue) {
+  viewMode.value = 'list'
+  activeFilter.value = value
 }
 
 function roleLabel(role?: CourseRole) {
