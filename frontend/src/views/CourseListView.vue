@@ -11,7 +11,10 @@
     <div class="course-dashboard-grid">
       <aside class="course-filter-panel">
         <div class="course-filter-actions">
-          <button class="button primary course-filter-create" @click="openCreateDialog">创建课程</button>
+          <button class="course-filter-button course-filter-create-row" @click="openCreateDialog">
+            <strong>创建课程</strong>
+            <span>新建一门课程并进入课程工作区</span>
+          </button>
         </div>
 
         <div class="course-filter-nav">

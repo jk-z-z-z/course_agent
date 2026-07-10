@@ -559,9 +559,9 @@ button:disabled {
   padding-bottom: 8px;
 }
 
-.course-filter-create {
+.course-filter-create-row {
   width: 100%;
-  justify-content: center;
+  padding-top: 0;
 }
 
 .course-filter-nav,
