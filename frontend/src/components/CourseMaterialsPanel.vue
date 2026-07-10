@@ -1,38 +1,48 @@
 <template>
   <article class="materials-card">
-    <MaterialsToolbar
-      :loading="loadingTree"
-      :can-manage="canManage"
-      @reload="reload"
-      @create-folder="createFolder"
-      @upload="openUploader"
-    />
-
     <input ref="fileInputRef" class="hidden-input" type="file" @change="handleUpload" />
 
     <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
-    <p v-else-if="!tree.length && !loadingTree" class="muted-copy">当前课程还没有资料。</p>
 
-    <div class="materials-layout">
-      <section class="materials-tree-panel">
-        <div class="materials-pane-head">
-          <div>
-            <p class="eyebrow">Folders</p>
-            <h4 class="materials-pane-title">资料导航</h4>
-          </div>
-        </div>
-        <MaterialTree :nodes="tree" :selected-id="selectedNodeId" @select="selectNode" />
+    <div class="materials-shell">
+      <section class="materials-main-panel">
+        <p v-if="!tree.length && !loadingTree" class="muted-copy">当前课程还没有资料。</p>
+
+        <MaterialsDetailPanel
+          :detail="selectedDetail"
+          :can-manage="canManage"
+          :loading-blob="loadingBlob"
+          @rename="renameNode"
+          @remove="removeNode"
+          @preview="handlePreview"
+          @download="handleDownload"
+        />
       </section>
 
-      <MaterialsDetailPanel
-        :detail="selectedDetail"
-        :can-manage="canManage"
-        :loading-blob="loadingBlob"
-        @rename="renameNode"
-        @remove="removeNode"
-        @preview="handlePreview"
-        @download="handleDownload"
-      />
+      <aside class="materials-sidebar" :class="{ collapsed: sidebarCollapsed }">
+        <button class="materials-sidebar-toggle" @click="sidebarCollapsed = !sidebarCollapsed">
+          {{ sidebarCollapsed ? '展开资料栏' : '收起资料栏' }}
+        </button>
+
+        <div v-if="!sidebarCollapsed" class="materials-sidebar-body">
+          <div class="materials-pane-head">
+            <div>
+              <p class="eyebrow">Folders</p>
+              <h4 class="materials-pane-title">资料导航</h4>
+            </div>
+          </div>
+
+          <MaterialsToolbar
+            :can-manage="canManage"
+            @create-folder="createFolder"
+            @upload="openUploader"
+          />
+
+          <section class="materials-tree-panel">
+            <MaterialTree :nodes="tree" :selected-id="selectedNodeId" @select="selectNode" />
+          </section>
+        </div>
+      </aside>
     </div>
   </article>
 </template>
@@ -67,6 +77,7 @@ const loadingTree = ref(false)
 const loadingBlob = ref(false)
 const errorMessage = ref('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
+const sidebarCollapsed = ref(false)
 
 async function loadTree() {
   loadingTree.value = true
@@ -200,10 +211,6 @@ async function removeNode() {
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '资料删除失败'
   }
-}
-
-async function reload() {
-  await loadTree()
 }
 
 function currentFolderTargetId() {
