@@ -7,8 +7,13 @@
         @click="$emit('select', node)"
       >
         <span class="tree-node-label">
-          <span class="tree-node-icon">{{ node.type === 'folder' ? '📁' : '📄' }}</span>
-          <span>{{ node.name }}</span>
+          <span class="tree-node-icon" :class="node.type === 'folder' ? 'folder' : 'file'">
+            {{ node.type === 'folder' ? 'F' : 'D' }}
+          </span>
+          <span class="tree-node-name">
+            <strong>{{ node.name }}</strong>
+            <small>{{ node.type === 'file' ? '文件节点' : '目录节点' }}</small>
+          </span>
         </span>
         <span class="tree-node-meta">{{ node.type === 'file' ? formatFileSize(node.fileSize ?? 0) : `${node.children?.length ?? 0} 项` }}</span>
       </button>

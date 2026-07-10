@@ -1,16 +1,12 @@
 <template>
   <article class="card materials-card">
-    <div class="section-head section-head-top">
-      <div>
-        <p class="eyebrow">Materials</p>
-        <h3>资料中心</h3>
-      </div>
-      <div class="inline-actions">
-        <button class="button ghost compact" @click="reload" :disabled="loadingTree">{{ loadingTree ? '刷新中' : '刷新资料' }}</button>
-        <button v-if="canManage" class="button ghost compact" @click="createFolder">新建文件夹</button>
-        <button v-if="canManage" class="button primary compact" @click="openUploader">上传文件</button>
-      </div>
-    </div>
+    <MaterialsToolbar
+      :loading="loadingTree"
+      :can-manage="canManage"
+      @reload="reload"
+      @create-folder="createFolder"
+      @upload="openUploader"
+    />
 
     <input ref="fileInputRef" class="hidden-input" type="file" @change="handleUpload" />
 
@@ -19,51 +15,24 @@
 
     <div class="materials-layout">
       <section class="materials-tree-panel">
+        <div class="materials-pane-head">
+          <div>
+            <p class="eyebrow">Folders</p>
+            <h4 class="materials-pane-title">资料导航</h4>
+          </div>
+        </div>
         <MaterialTree :nodes="tree" :selected-id="selectedNodeId" @select="selectNode" />
       </section>
 
-      <section class="materials-detail-panel panel">
-        <template v-if="selectedDetail">
-          <div class="section-head">
-            <div>
-              <p class="eyebrow">Detail</p>
-              <h4 class="material-title">{{ selectedDetail.nodeName }}</h4>
-            </div>
-            <div v-if="canManage" class="inline-actions">
-              <button class="button ghost compact" @click="renameNode">重命名</button>
-              <button class="button danger compact" @click="removeNode">删除</button>
-            </div>
-          </div>
-
-          <div class="material-detail-grid">
-            <div>
-              <p class="label">类型</p>
-              <p class="value minor">{{ selectedDetail.nodeType === 'folder' ? '文件夹' : '文件' }}</p>
-            </div>
-            <div>
-              <p class="label">大小</p>
-              <p class="value minor">{{ formatFileSize(selectedDetail.fileSize) }}</p>
-            </div>
-            <div>
-              <p class="label">版本</p>
-              <p class="value minor">v{{ selectedDetail.latestVersionNo }}</p>
-            </div>
-            <div>
-              <p class="label">更新时间</p>
-              <p class="value minor">{{ formatDateTime(selectedDetail.updatedAt) }}</p>
-            </div>
-          </div>
-
-          <div v-if="selectedDetail.nodeType === 'file'" class="inline-actions top-gap">
-            <button class="button ghost compact" @click="handlePreview" :disabled="loadingBlob">预览</button>
-            <button class="button primary compact" @click="handleDownload" :disabled="loadingBlob">下载</button>
-          </div>
-        </template>
-
-        <div v-else class="empty-state small">
-          <p class="muted-copy">从左侧选择一个资料节点查看详情。</p>
-        </div>
-      </section>
+      <MaterialsDetailPanel
+        :detail="selectedDetail"
+        :can-manage="canManage"
+        :loading-blob="loadingBlob"
+        @rename="renameNode"
+        @remove="removeNode"
+        @preview="handlePreview"
+        @download="handleDownload"
+      />
     </div>
   </article>
 </template>
@@ -71,6 +40,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import MaterialTree from '@/components/MaterialTree.vue'
+import MaterialsDetailPanel from '@/components/MaterialsDetailPanel.vue'
+import MaterialsToolbar from '@/components/MaterialsToolbar.vue'
 import {
   createMaterialFolder,
   deleteMaterialNode,
@@ -82,7 +53,6 @@ import {
   uploadMaterialFile,
 } from '@/api/material'
 import type { MaterialDetailVO, MaterialTreeNodeVO } from '@/types/material'
-import { formatDateTime } from '@/utils/date'
 
 const props = defineProps<{
   courseId: number
@@ -240,12 +210,6 @@ function currentFolderTargetId() {
   if (!selectedDetail.value) return undefined
   if (selectedDetail.value.nodeType === 'folder') return selectedDetail.value.id
   return selectedDetail.value.parentId
-}
-
-function formatFileSize(size: number) {
-  if (size < 1024) return `${size} B`
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
-  return `${(size / (1024 * 1024)).toFixed(1)} MB`
 }
 
 function findFirstNode(nodes: MaterialTreeNodeVO[]): MaterialTreeNodeVO | null {
