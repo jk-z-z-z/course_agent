@@ -16,10 +16,7 @@
           :preview-text="previewText"
           :preview-mime-type="previewMimeType"
           :tree="tree"
-          @rename="renameNode"
           @remove="removeNode"
-          @preview="handlePreview"
-          @download="handleDownload"
         />
       </section>
 
@@ -58,11 +55,9 @@ import MaterialsToolbar from '@/components/MaterialsToolbar.vue'
 import {
   createMaterialFolder,
   deleteMaterialNode,
-  downloadMaterial,
   getMaterialDetail,
   getMaterialTree,
   previewMaterial,
-  updateMaterialNode,
   uploadMaterialFile,
 } from '@/api/material'
 import type { MaterialDetailVO, MaterialTreeNodeVO } from '@/types/material'
@@ -124,21 +119,6 @@ async function selectNode(node: MaterialTreeNodeVO) {
   }
 }
 
-async function handlePreview() {
-  if (!selectedDetail.value) return
-  loadingBlob.value = true
-  try {
-    const blob = await previewMaterial(props.token, props.courseId, selectedDetail.value.id)
-    const url = URL.createObjectURL(blob)
-    window.open(url, '_blank', 'noopener,noreferrer')
-    window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '资料预览失败'
-  } finally {
-    loadingBlob.value = false
-  }
-}
-
 async function loadInlinePreview() {
   resetPreview()
   if (!selectedDetail.value || selectedDetail.value.nodeType !== 'file') return
@@ -155,24 +135,6 @@ async function loadInlinePreview() {
     }
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '资料预览失败'
-  } finally {
-    loadingBlob.value = false
-  }
-}
-
-async function handleDownload() {
-  if (!selectedDetail.value) return
-  loadingBlob.value = true
-  try {
-    const blob = await downloadMaterial(props.token, props.courseId, selectedDetail.value.id)
-    const url = URL.createObjectURL(blob)
-    const anchor = document.createElement('a')
-    anchor.href = url
-    anchor.download = selectedDetail.value.nodeName
-    anchor.click()
-    window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '资料下载失败'
   } finally {
     loadingBlob.value = false
   }
@@ -212,18 +174,6 @@ async function handleUpload(event: Event) {
     if (createdNode) await selectNode(createdNode)
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '文件上传失败'
-  }
-}
-
-async function renameNode() {
-  if (!props.canManage || !selectedDetail.value) return
-  const nextName = window.prompt('输入新的名称', selectedDetail.value.nodeName)?.trim() ?? ''
-  if (!nextName || nextName === selectedDetail.value.nodeName) return
-  try {
-    await updateMaterialNode(props.token, props.courseId, selectedDetail.value.id, { nodeName: nextName })
-    await loadTree()
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '资料重命名失败'
   }
 }
 

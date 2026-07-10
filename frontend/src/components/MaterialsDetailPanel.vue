@@ -5,26 +5,7 @@
         <div>
           <h4 class="material-title">{{ detail.nodeName }}</h4>
         </div>
-        <div class="inline-actions">
-          <button
-            v-if="detail.nodeType === 'file'"
-            class="button ghost compact"
-            @click="$emit('preview')"
-            :disabled="loadingBlob"
-          >
-            新窗口预览
-          </button>
-          <button
-            v-if="detail.nodeType === 'file'"
-            class="button primary compact"
-            @click="$emit('download')"
-            :disabled="loadingBlob"
-          >
-            下载
-          </button>
-          <button v-if="canManage" class="button ghost compact" @click="$emit('rename')">重命名</button>
-          <button v-if="canManage" class="button danger compact" @click="$emit('remove')">删除</button>
-        </div>
+        <button v-if="canManage" class="button danger compact" @click="$emit('remove')">删除</button>
       </div>
 
       <div v-if="detail.nodeType === 'folder'" class="materials-folder-view">
@@ -64,7 +45,7 @@
         />
 
         <div v-else class="empty-state small">
-          <p class="muted-copy">当前文件暂不支持页内渲染，请使用下载或新窗口预览。</p>
+          <p class="muted-copy">当前文件暂不支持页内渲染。</p>
         </div>
       </div>
     </template>
@@ -90,10 +71,7 @@ const props = defineProps<{
 }>()
 
 defineEmits<{
-  rename: []
   remove: []
-  preview: []
-  download: []
 }>()
 
 const folderChildren = computed(() => {
