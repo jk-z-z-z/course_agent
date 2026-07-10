@@ -1,6 +1,6 @@
 <template>
   <div class="app-shell" :class="{ 'with-sidebar': hasSidebar }">
-    <header class="app-shell-top">
+    <header v-if="$slots.top" class="app-shell-top">
       <slot name="top" />
     </header>
 

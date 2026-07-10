@@ -85,27 +85,25 @@ button:disabled {
   padding: 20px 24px 24px;
 }
 
-.app-shell.dashboard-shell {
-  height: 100dvh;
-  grid-template-rows: 10dvh minmax(0, 1fr);
-  overflow: hidden;
+.basic-layout {
+  min-height: 100vh;
+  background: #ffffff;
 }
 
-.app-shell.dashboard-shell .app-shell-top {
-  position: relative;
-  top: auto;
-  padding: 0 2vw;
-  overflow: hidden;
-  min-height: 0;
-  background: #ffffff;
+.basic-layout-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  height: 84px;
+  padding: 0 24px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(15, 23, 42, 0.08);
 }
 
-.app-shell.dashboard-shell .app-shell-main {
-  padding: 0 2vw;
-  overflow: hidden;
-  min-height: 0;
-  background: #ffffff;
+.basic-layout-content {
+  min-height: calc(100vh - 84px);
+  padding-top: 0;
 }
 
 .platform-top-nav,
@@ -1242,20 +1240,6 @@ h3 {
 }
 
 @media (max-width: 980px) {
-  .app-shell.dashboard-shell {
-    height: auto;
-    min-height: 100vh;
-    grid-template-rows: auto 1fr;
-    overflow: visible;
-  }
-
-  .app-shell.dashboard-shell .app-shell-top,
-  .app-shell.dashboard-shell .app-shell-main {
-    padding-left: 16px;
-    padding-right: 16px;
-    overflow: visible;
-  }
-
   .platform-top-nav {
     padding: 14px 0 0;
   }
@@ -1353,6 +1337,15 @@ h3 {
 }
 
 @media (max-width: 640px) {
+  .basic-layout-header {
+    height: auto;
+    padding: 12px 16px;
+  }
+
+  .basic-layout-content {
+    min-height: auto;
+  }
+
   .platform-top-nav {
     flex-direction: column;
     align-items: stretch;

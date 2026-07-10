@@ -1,9 +1,5 @@
 <template>
   <AppShell has-sidebar>
-    <template #top>
-      <PlatformTopNav />
-    </template>
-
     <template #side>
       <CourseSidebar
         v-if="course"
@@ -48,7 +44,6 @@ import { RouterView, useRoute } from 'vue-router'
 import AppShell from '@/components/AppShell.vue'
 import CourseSidebar from '@/components/CourseSidebar.vue'
 import CourseTopTabs from '@/components/CourseTopTabs.vue'
-import PlatformTopNav from '@/components/PlatformTopNav.vue'
 import { useAuth } from '@/composables/useAuth'
 import { provideCourseContext } from '@/composables/useCourseContext'
 import { getCourse } from '@/api/course'
