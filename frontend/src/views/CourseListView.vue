@@ -1,17 +1,15 @@
 <template>
-  <AppShell>
+  <AppShell class="dashboard-shell">
     <template #top>
-      <PlatformTopNav />
+      <PlatformTopNav variant="dashboard" />
     </template>
 
     <section class="page-section course-dashboard">
       <div class="course-list-hero">
-        <div class="course-list-hero-nav-spacer" />
-
         <div class="course-list-hero-copy">
-          <p class="eyebrow">Dashboard</p>
+          <p class="eyebrow">Welcome</p>
           <h1>欢迎回来，{{ auth.user.value?.username || '同学' }}</h1>
-          <p class="lead">集中管理课程、资料与课程助教，从这里进入每一门课程的详情页面。</p>
+          <p class="lead">在这里统一进入课程工作区，管理你创建和加入的全部课程。</p>
 
           <div class="hero-actions">
             <button class="button ghost" @click="loadCourses" :disabled="loadingCourses">
@@ -25,8 +23,8 @@
       <div class="course-dashboard-grid">
         <aside class="course-filter-panel">
           <div class="course-panel-head">
-            <p class="eyebrow">Filter</p>
-            <h2>课程分类</h2>
+            <p class="eyebrow">Workspace</p>
+            <h2>测试导航栏</h2>
           </div>
 
           <div class="course-filter-nav">
@@ -45,38 +43,40 @@
 
         <section class="course-grid-panel">
           <div class="course-panel-head">
-            <p class="eyebrow">Courses</p>
+            <p class="eyebrow">Workspace</p>
             <h2>我的课程</h2>
           </div>
 
-          <p v-if="errorMessage" class="error top-gap">{{ errorMessage }}</p>
-          <p v-else-if="!filteredCourses.length && !loadingCourses" class="muted-copy top-gap">
-            当前筛选下还没有课程，先创建一门课程开始使用。
-          </p>
+          <div class="course-grid-scroll">
+            <p v-if="errorMessage" class="error top-gap">{{ errorMessage }}</p>
+            <p v-else-if="!filteredCourses.length && !loadingCourses" class="muted-copy top-gap">
+              当前筛选下还没有课程，先创建一门课程开始使用。
+            </p>
 
-          <div v-else class="course-grid">
-            <article v-for="course in filteredCourses" :key="course.id" class="course-card-panel">
-              <div class="course-card-cover" :class="statusClass(course.status)">
-                <span class="pill subtle">{{ roleLabel(course.myRole) }}</span>
-                <span class="course-card-code">{{ course.courseCode }}</span>
-              </div>
-
-              <div class="course-card-body">
-                <div>
-                  <h3>{{ course.courseName }}</h3>
-                  <p class="course-card-copy">{{ course.courseDescription || '当前课程还没有填写简介。' }}</p>
+            <div v-else class="course-grid">
+              <article v-for="course in filteredCourses" :key="course.id" class="course-card-panel">
+                <div class="course-card-cover" :class="statusClass(course.status)">
+                  <span class="pill subtle">{{ roleLabel(course.myRole) }}</span>
+                  <span class="course-card-code">{{ course.courseCode }}</span>
                 </div>
 
-                <div class="course-card-meta">
-                  <span>状态：{{ statusLabel(course.status) }}</span>
-                  <span>更新：{{ formatDateTime(course.updatedAt) }}</span>
-                </div>
+                <div class="course-card-body">
+                  <div>
+                    <h3>{{ course.courseName }}</h3>
+                    <p class="course-card-copy">{{ course.courseDescription || '当前课程还没有填写简介。' }}</p>
+                  </div>
 
-                <div class="inline-actions">
-                  <button class="button primary compact" @click="enterCourse(course.id)">进入课程</button>
+                  <div class="course-card-meta">
+                    <span>状态：{{ statusLabel(course.status) }}</span>
+                    <span>更新：{{ formatDateTime(course.updatedAt) }}</span>
+                  </div>
+
+                  <div class="inline-actions">
+                    <button class="button primary compact" @click="enterCourse(course.id)">进入课程</button>
+                  </div>
                 </div>
-              </div>
-            </article>
+              </article>
+            </div>
           </div>
         </section>
       </div>

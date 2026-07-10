@@ -8,26 +8,43 @@
       </span>
     </button>
 
-    <nav class="platform-top-links">
+    <nav v-if="variant !== 'dashboard'" class="platform-top-links">
       <RouterLink to="/courses" class="platform-link">我的课程</RouterLink>
       <button class="platform-link ghost-link" type="button" @click="openCreateCourse">创建课程</button>
       <button class="platform-link ghost-link" type="button" @click="togglePanel('messages')">消息中心</button>
     </nav>
 
-    <div class="platform-top-actions">
-      <button class="platform-icon-button" type="button" aria-label="搜索" @click="togglePanel('search')">
+    <div class="platform-top-actions" :class="{ compact: variant === 'dashboard' }">
+      <button
+        v-if="variant !== 'dashboard'"
+        class="platform-icon-button"
+        type="button"
+        aria-label="搜索"
+        @click="togglePanel('search')"
+      >
         <span>⌕</span>
       </button>
-      <button class="platform-icon-button has-dot" type="button" aria-label="通知" @click="togglePanel('notifications')">
+      <button
+        v-if="variant !== 'dashboard'"
+        class="platform-icon-button has-dot"
+        type="button"
+        aria-label="通知"
+        @click="togglePanel('notifications')"
+      >
         <span>◌</span>
       </button>
 
       <div class="platform-user-menu">
-        <button class="platform-user-trigger" type="button" @click="toggleMenu">
+        <button
+          class="platform-user-trigger"
+          :class="{ dashboard: variant === 'dashboard' }"
+          type="button"
+          @click="toggleMenu"
+        >
           <span class="platform-avatar">{{ userInitial }}</span>
           <span class="platform-user-copy">
-            <strong>{{ auth.user.value?.username || '未登录用户' }}</strong>
-            <small>教师工作台</small>
+            <strong>{{ variant === 'dashboard' ? '个人主页' : auth.user.value?.username || '未登录用户' }}</strong>
+            <small>{{ variant === 'dashboard' ? auth.user.value?.username || '未登录用户' : '教师工作台' }}</small>
           </span>
           <span class="platform-caret">⌄</span>
         </button>
@@ -39,7 +56,7 @@
       </div>
     </div>
 
-    <div v-if="activePanel" class="platform-floating-panel">
+    <div v-if="activePanel && variant !== 'dashboard'" class="platform-floating-panel">
       <template v-if="activePanel === 'messages'">
         <p class="eyebrow">Messages</p>
         <h3>消息中心</h3>
@@ -66,6 +83,15 @@ import { computed, ref } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { logout } from '@/api/user'
 import { useAuth } from '@/composables/useAuth'
+
+withDefaults(
+  defineProps<{
+    variant?: 'default' | 'dashboard'
+  }>(),
+  {
+    variant: 'default',
+  },
+)
 
 const router = useRouter()
 const auth = useAuth()
