@@ -109,8 +109,11 @@ button:disabled {
   position: relative;
   max-width: 1280px;
   margin: 0 auto;
-  border-radius: 30px;
-  box-shadow: 0 24px 60px rgba(148, 163, 184, 0.18);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .brand-button {
@@ -445,15 +448,14 @@ button:disabled {
 .course-list-hero {
   min-height: 320px;
   padding: 148px 44px 40px;
-  border-radius: 34px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 0;
+  border: 0;
   display: grid;
   align-content: end;
   background:
     radial-gradient(circle at 20% 10%, rgba(255, 236, 179, 0.88), transparent 34%),
     radial-gradient(circle at 76% 28%, rgba(196, 255, 244, 0.86), transparent 28%),
     linear-gradient(135deg, rgba(249, 250, 251, 0.95), rgba(236, 253, 245, 0.92));
-  box-shadow: 0 28px 80px rgba(148, 163, 184, 0.18);
   margin-top: -88px;
 }
 
@@ -495,16 +497,18 @@ button:disabled {
 .course-grid-panel {
   display: grid;
   gap: 22px;
-  padding: 34px 36px;
-  border-radius: 30px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 24px 60px rgba(148, 163, 184, 0.12);
+  padding: 12px 0 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .course-panel-head {
   display: grid;
   gap: 10px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .course-filter-nav,
@@ -524,7 +528,11 @@ button:disabled {
   display: grid;
   gap: 8px;
   text-align: left;
-  padding: 24px 22px;
+  padding: 18px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
   cursor: pointer;
 }
 
@@ -539,13 +547,19 @@ button:disabled {
 
 .course-filter-button.active {
   border-color: rgba(18, 183, 154, 0.35);
-  background: linear-gradient(135deg, rgba(24, 195, 165, 0.16), rgba(111, 240, 218, 0.1));
-  box-shadow: inset 0 0 0 1px rgba(111, 240, 218, 0.18);
+  background: transparent;
+  box-shadow: inset 4px 0 0 #12b79a;
+  padding-left: 14px;
+}
+
+.course-filter-button:last-child {
+  border-bottom: 0;
 }
 
 .course-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-content: start;
+  padding-top: 4px;
 }
 
 .course-card-panel {
@@ -1190,7 +1204,7 @@ h3 {
 
   .course-filter-panel,
   .course-grid-panel {
-    padding: 24px;
+    padding: 8px 0 0;
   }
 
   .course-page-head {
