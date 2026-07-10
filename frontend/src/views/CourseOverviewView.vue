@@ -5,7 +5,7 @@
         <p class="eyebrow">Home</p>
         <div class="course-overview-heading">
           <h1>{{ course?.courseName || '课程详情' }}</h1>
-          <span v-if="course" class="pill subtle">{{ statusLabel(course.status) }}</span>
+          <span v-if="course" class="course-status-inline">{{ statusLabel(course.status) }}</span>
         </div>
       </div>
     </div>

@@ -708,9 +708,15 @@ button:disabled {
 
 .course-overview-heading {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.course-status-inline {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
 }
 
 .overview-copy h2 {
@@ -732,22 +738,35 @@ button:disabled {
 .overview-info-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 12px;
 }
 
 .overview-info-item,
 .overview-link-card {
   display: grid;
-  gap: 8px;
-  padding: 18px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.52);
-  border: 1px solid rgba(15, 23, 42, 0.06);
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(15, 23, 42, 0.05);
 }
 
 .overview-info-item strong,
 .overview-link-card strong {
   color: #111827;
+}
+
+.overview-tabs-card .section-head {
+  margin-bottom: 2px;
+}
+
+.overview-tabs-card .eyebrow {
+  margin-bottom: 8px;
+}
+
+.overview-tabs-card h2 {
+  font-size: 22px;
+  color: #374151;
 }
 
 .overview-link-card span {
