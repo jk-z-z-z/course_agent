@@ -4,7 +4,7 @@
 
     <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
 
-    <div class="materials-shell">
+    <div class="materials-shell" :class="{ collapsed: sidebarCollapsed }">
       <section class="materials-main-panel">
         <p v-if="!tree.length && !loadingTree" class="muted-copy">当前课程还没有资料。</p>
 
@@ -19,13 +19,11 @@
         />
       </section>
 
-      <aside class="materials-sidebar" :class="{ collapsed: sidebarCollapsed }">
-        <button class="materials-sidebar-toggle" @click="sidebarCollapsed = !sidebarCollapsed">
-          <span class="materials-sidebar-toggle-arrow">{{ sidebarCollapsed ? '‹' : '›' }}</span>
-          <span v-if="!sidebarCollapsed">收起资料栏</span>
-          <span v-else>资料栏</span>
-        </button>
+      <button class="materials-sidebar-toggle" @click="sidebarCollapsed = !sidebarCollapsed">
+        <span class="materials-sidebar-toggle-arrow">{{ sidebarCollapsed ? '‹' : '›' }}</span>
+      </button>
 
+      <aside class="materials-sidebar" :class="{ collapsed: sidebarCollapsed }">
         <div class="materials-sidebar-body" :class="{ hidden: sidebarCollapsed }">
           <div class="materials-pane-head">
             <div>
