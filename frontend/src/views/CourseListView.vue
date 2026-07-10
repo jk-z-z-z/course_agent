@@ -35,14 +35,6 @@
 
       <section class="course-grid-panel">
         <div v-if="viewMode === 'create'" class="course-create-panel">
-          <div class="course-create-head">
-            <div>
-              <p class="eyebrow">Create Course</p>
-              <h2>创建课程</h2>
-            </div>
-            <button class="button ghost compact" @click="closeCreatePanel" :disabled="savingCourse">返回课程列表</button>
-          </div>
-
           <form class="form course-create-form" @submit.prevent="submitCourseForm">
             <label class="field">
               <span>课程编号</span>
