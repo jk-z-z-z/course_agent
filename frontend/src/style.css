@@ -37,6 +37,11 @@ body {
   min-height: 100vh;
 }
 
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
 button,
 input,
 textarea,
@@ -62,6 +67,178 @@ button:disabled {
 
 .dashboard-shell {
   display: block;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+}
+
+.app-shell.with-sidebar {
+  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-areas:
+    "top top"
+    "side main";
+}
+
+.app-shell-top {
+  grid-area: top;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 18px 24px 0;
+}
+
+.app-shell-side {
+  grid-area: side;
+  padding: 20px 0 24px 24px;
+}
+
+.app-shell-main {
+  grid-area: main;
+  padding: 20px 24px 24px;
+}
+
+.platform-top-nav,
+.course-sidebar,
+.content-card,
+.page-hero,
+.page-state-card {
+  border: 1px solid var(--border-strong);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(18px);
+  color: #111827;
+}
+
+.platform-top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 24px;
+}
+
+.brand-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  background: transparent;
+  color: #111827;
+  cursor: pointer;
+}
+
+.brand-mark {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #18c3a5, #72e0cf);
+  color: white;
+  font-weight: 800;
+}
+
+.brand-copy {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+
+.brand-copy strong,
+.platform-user {
+  color: #111827;
+}
+
+.brand-copy small {
+  color: #6b7280;
+}
+
+.platform-top-links,
+.platform-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.platform-link {
+  color: #374151;
+  font-weight: 600;
+}
+
+.platform-link.router-link-active {
+  color: #12b79a;
+}
+
+.course-sidebar {
+  min-height: calc(100vh - 126px);
+  padding: 24px 18px;
+}
+
+.course-sidebar-head {
+  margin-bottom: 20px;
+}
+
+.course-sidebar-title {
+  font-size: 24px;
+  color: #111827;
+}
+
+.course-sidebar-nav {
+  display: grid;
+  gap: 8px;
+}
+
+.course-sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  color: #374151;
+  font-weight: 600;
+}
+
+.course-sidebar-link.active {
+  background: linear-gradient(135deg, rgba(24, 195, 165, 0.12), rgba(86, 228, 205, 0.16));
+  color: #0f9e83;
+}
+
+.course-sidebar-icon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(24, 195, 165, 0.08);
+}
+
+.page-section {
+  display: grid;
+  gap: 20px;
+}
+
+.page-hero,
+.content-card,
+.page-state-card {
+  padding: 28px;
+}
+
+.page-state-card {
+  display: grid;
+  gap: 16px;
+}
+
+.course-list-hero {
+  min-height: 220px;
+  align-content: end;
+  background:
+    linear-gradient(135deg, rgba(111, 240, 218, 0.3), rgba(255, 244, 214, 0.92)),
+    rgba(255, 255, 255, 0.82);
 }
 
 .card {
@@ -370,6 +547,25 @@ h3 {
 }
 
 @media (max-width: 980px) {
+  .app-shell.with-sidebar {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "top"
+      "side"
+      "main";
+  }
+
+  .app-shell-side,
+  .app-shell-main,
+  .app-shell-top {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .course-sidebar {
+    min-height: auto;
+  }
+
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
@@ -383,6 +579,11 @@ h3 {
   .page-shell,
   .dashboard-shell {
     padding: 16px;
+  }
+
+  .platform-top-nav {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .hero-card,

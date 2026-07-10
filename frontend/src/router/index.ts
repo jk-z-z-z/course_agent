@@ -4,8 +4,42 @@ import { useAuthStore } from '@/stores/auth'
 const routes = [
   {
     path: '/',
-    name: 'home',
-    component: () => import('@/views/HomeView.vue'),
+    redirect: '/courses',
+  },
+  {
+    path: '/courses',
+    name: 'courses',
+    component: () => import('@/views/CourseListView.vue'),
+  },
+  {
+    path: '/courses/:courseId',
+    component: () => import('@/views/CourseLayoutView.vue'),
+    children: [
+      {
+        path: '',
+        redirect: (to: { params: { courseId?: string } }) => `/courses/${to.params.courseId}/overview`,
+      },
+      {
+        path: 'overview',
+        name: 'course-overview',
+        component: () => import('@/views/CourseOverviewView.vue'),
+      },
+      {
+        path: 'members',
+        name: 'course-members',
+        component: () => import('@/views/CourseMembersView.vue'),
+      },
+      {
+        path: 'materials',
+        name: 'course-materials',
+        component: () => import('@/views/CourseMaterialsView.vue'),
+      },
+      {
+        path: 'agent',
+        name: 'course-agent',
+        component: () => import('@/views/CourseAgentView.vue'),
+      },
+    ],
   },
   {
     path: '/login',
@@ -26,7 +60,7 @@ router.beforeEach((to) => {
     return { name: 'login' }
   }
   if (auth.isLoggedIn.value && to.meta.guestOnly) {
-    return { name: 'home' }
+    return { name: 'courses' }
   }
   return true
 })
