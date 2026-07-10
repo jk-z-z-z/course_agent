@@ -5,23 +5,11 @@
         <p class="eyebrow">Welcome</p>
         <h1>欢迎回来，{{ auth.user.value?.username || '同学' }}</h1>
         <p class="lead">在这里统一进入课程工作区，管理你创建和加入的全部课程。</p>
-
-        <div class="hero-actions">
-          <button class="button ghost" @click="loadCourses" :disabled="loadingCourses">
-            {{ loadingCourses ? '刷新中' : '刷新课程' }}
-          </button>
-          <button class="button primary" @click="openCreateDialog">创建课程</button>
-        </div>
       </div>
     </div>
 
     <div class="course-dashboard-grid">
       <aside class="course-filter-panel">
-        <div class="course-panel-head">
-          <p class="eyebrow">Workspace</p>
-          <h2>测试导航栏</h2>
-        </div>
-
         <div class="course-filter-nav">
           <button
             v-for="item in filters"
@@ -37,11 +25,6 @@
       </aside>
 
       <section class="course-grid-panel">
-        <div class="course-panel-head">
-          <p class="eyebrow">Workspace</p>
-          <h2>我的课程</h2>
-        </div>
-
         <div class="course-grid-scroll">
           <p v-if="errorMessage" class="error top-gap">{{ errorMessage }}</p>
           <p v-else-if="!filteredCourses.length && !loadingCourses" class="muted-copy top-gap">
