@@ -348,6 +348,12 @@ button:disabled {
   gap: 20px;
 }
 
+.overview-tabs-card,
+.overview-tab-panel {
+  display: grid;
+  gap: 20px;
+}
+
 .overview-summary {
   grid-template-columns: 260px minmax(0, 1fr);
   align-items: center;
@@ -369,6 +375,43 @@ button:disabled {
 
 .overview-copy h2 {
   color: #111827;
+}
+
+.overview-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.overview-tab-button {
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+  color: #374151;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.overview-tab-button.active {
+  border-color: rgba(24, 195, 165, 0.32);
+  background: linear-gradient(135deg, rgba(24, 195, 165, 0.16), rgba(111, 240, 218, 0.12));
+  color: #0f9e83;
+}
+
+.overview-rich-block {
+  padding: 20px 22px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.overview-lead {
+  margin: 0;
+  max-width: none;
 }
 
 .overview-info-list {
