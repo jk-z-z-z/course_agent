@@ -21,19 +21,9 @@
         <button class="button primary" @click="refreshCourse">重新加载</button>
       </div>
 
-      <template v-else-if="course">
-        <CourseTopTabs
-          :course-id="course.id"
-          :course-name="course.courseName"
-          :course-code="course.courseCode"
-          :role="course.myRole"
-          :status="course.status"
-        />
-
-        <div class="course-workspace-stage">
-          <RouterView />
-        </div>
-      </template>
+      <div v-else-if="course" class="course-workspace-stage">
+        <RouterView />
+      </div>
     </section>
   </AppShell>
 </template>
@@ -43,7 +33,6 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import AppShell from '@/components/AppShell.vue'
 import CourseSidebar from '@/components/CourseSidebar.vue'
-import CourseTopTabs from '@/components/CourseTopTabs.vue'
 import { useAuth } from '@/composables/useAuth'
 import { provideCourseContext } from '@/composables/useCourseContext'
 import { getCourse } from '@/api/course'

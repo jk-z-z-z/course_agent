@@ -1,35 +1,12 @@
 <template>
   <section class="page-section">
-    <div class="course-page-head">
-      <div>
-        <p class="eyebrow">Materials</p>
-        <h1>课程资料</h1>
-        <p class="lead">资料模块先接入现有组件，再逐步贴近你提供的资料页原型。</p>
-      </div>
-    </div>
-
-    <div class="materials-page-layout">
+    <div class="materials-page-layout materials-page-layout-single">
       <CourseMaterialsPanel
         v-if="course && token"
         :course-id="course.id"
         :token="token"
         :can-manage="canManage"
       />
-
-      <aside class="workspace-aside-card materials-aside-card">
-        <p class="eyebrow">Access</p>
-        <h2>资料访问权限</h2>
-        <div class="permission-guide-list">
-          <div class="permission-guide-item">
-            <strong>教师 / 创建者</strong>
-            <span>可创建文件夹、上传资料、重命名与删除节点。</span>
-          </div>
-          <div class="permission-guide-item">
-            <strong>学生</strong>
-            <span>可预览与下载已发布资料，不参与目录管理。</span>
-          </div>
-        </div>
-      </aside>
     </div>
   </section>
 </template>

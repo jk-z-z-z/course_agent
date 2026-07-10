@@ -17,7 +17,7 @@ const routes = [
       },
       {
         path: 'courses/:courseId',
-        component: () => import('@/views/CourseLayoutView.vue'),
+        component: () => import('@/layouts/CourseLayout.vue'),
         children: [
           {
             path: '',

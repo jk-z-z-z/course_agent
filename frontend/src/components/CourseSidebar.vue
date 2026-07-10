@@ -31,9 +31,9 @@ const props = defineProps<{
 }>()
 
 const items = computed(() => [
-  { to: `/courses/${props.courseId}/overview`, label: '课程详情', icon: '◧' },
-  { to: `/courses/${props.courseId}/members`, label: '课程成员', icon: '◎' },
-  { to: `/courses/${props.courseId}/materials`, label: '课程资料', icon: '▤' },
-  { to: `/courses/${props.courseId}/agent`, label: '课程 Agent', icon: '◌' },
+  { to: `/courses/${props.courseId}/overview`, label: '首页', icon: '◧' },
+  { to: `/courses/${props.courseId}/materials`, label: '资料页', icon: '▤' },
+  { to: `/courses/${props.courseId}/agent`, label: 'Agent页', icon: '◌' },
+  { to: `/courses/${props.courseId}/members`, label: '成员页', icon: '◎' },
 ])
 </script>

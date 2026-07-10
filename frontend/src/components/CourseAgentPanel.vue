@@ -2,8 +2,8 @@
   <article class="agent-card">
     <div class="section-head section-head-top">
       <div>
-        <p class="eyebrow">Agent</p>
-        <h3>课程助教</h3>
+        <p class="eyebrow">Chat</p>
+        <h3>课程对话</h3>
       </div>
       <div class="inline-actions">
         <button class="button ghost compact" @click="reloadAll" :disabled="loadingOverview || sendingQuestion">
@@ -17,20 +17,7 @@
 
     <p v-if="overviewError" class="error">{{ overviewError }}</p>
 
-    <div v-if="agent" class="agent-grid">
-      <AgentConfigPanel
-        :agent="agent"
-        :can-manage="canManage"
-        :saving-config="savingConfig"
-        :config-error="configError"
-        :config-form="configForm"
-        @submit="submitConfig"
-        @update:agent-name="configForm.agentName = $event"
-        @update:prompt-template="configForm.promptTemplate = $event"
-        @update:status="configForm.status = $event as AgentStatus"
-      />
-
-      <div class="agent-main-panel">
+    <div v-if="agent" class="agent-main-panel">
         <AgentConversationList
           :conversations="conversations"
           :selected-conversation-id="selectedConversationId"
@@ -52,7 +39,6 @@
           @submit-question="submitQuestion"
           @update:question="questionForm.question = $event"
         />
-      </div>
     </div>
   </article>
 </template>
@@ -60,7 +46,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import AgentChatPanel from '@/components/AgentChatPanel.vue'
-import AgentConfigPanel from '@/components/AgentConfigPanel.vue'
 import AgentConversationList from '@/components/AgentConversationList.vue'
 import {
   createAgentConversation,
@@ -68,14 +53,12 @@ import {
   getCourseAgent,
   listAgentConversations,
   streamCourseAgent,
-  updateCourseAgent,
 } from '@/api/agent'
 import type {
   AgentMessageSourceVO,
   AgentMessageVO,
   AgentConversationDetailVO,
   AgentConversationVO,
-  AgentStatus,
   CourseAgentVO,
 } from '@/types/agent'
 
@@ -92,17 +75,10 @@ const selectedConversationDetail = ref<AgentConversationDetailVO | null>(null)
 const loadingOverview = ref(false)
 const loadingConversation = ref(false)
 const creatingConversation = ref(false)
-const savingConfig = ref(false)
 const sendingQuestion = ref(false)
 const overviewError = ref('')
 const conversationError = ref('')
-const configError = ref('')
 const chatError = ref('')
-const configForm = reactive({
-  agentName: '',
-  promptTemplate: '',
-  status: 'enabled' as AgentStatus,
-})
 const questionForm = reactive({
   question: '',
 })
@@ -128,7 +104,6 @@ function resetState() {
   selectedConversationDetail.value = null
   overviewError.value = ''
   conversationError.value = ''
-  configError.value = ''
   chatError.value = ''
   questionForm.question = ''
 }
@@ -143,9 +118,6 @@ async function loadOverview() {
       listAgentConversations(props.token, props.courseId),
     ])
     agent.value = agentData
-    configForm.agentName = agentData.agentName
-    configForm.promptTemplate = agentData.promptTemplate ?? ''
-    configForm.status = agentData.status
     conversations.value = conversationData
 
     if (!conversationData.length) {
@@ -199,28 +171,6 @@ async function handleCreateConversation() {
     conversationError.value = error instanceof Error ? error.message : '会话创建失败'
   } finally {
     creatingConversation.value = false
-  }
-}
-
-async function submitConfig() {
-  if (!agent.value) return
-  savingConfig.value = true
-  configError.value = ''
-  try {
-    const updated = await updateCourseAgent(props.token, props.courseId, {
-      agentName: configForm.agentName,
-      promptTemplate: configForm.promptTemplate,
-      status: configForm.status,
-      retrievalScope: 'course_all',
-    })
-    agent.value = updated
-    configForm.agentName = updated.agentName
-    configForm.promptTemplate = updated.promptTemplate ?? ''
-    configForm.status = updated.status
-  } catch (error) {
-    configError.value = error instanceof Error ? error.message : '配置保存失败'
-  } finally {
-    savingConfig.value = false
   }
 }
 

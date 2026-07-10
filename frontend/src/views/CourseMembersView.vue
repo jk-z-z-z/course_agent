@@ -1,27 +1,26 @@
 <template>
   <section class="page-section">
-    <div class="course-page-head">
+    <div class="course-page-head course-page-head-compact">
       <div>
         <p class="eyebrow">Members</p>
-        <h1>课程成员管理</h1>
-        <p class="lead">按角色控制课程权限与资料访问，教师与创建者可以在这里维护成员名单。</p>
-      </div>
-
-      <div class="hero-actions">
-        <button class="button ghost" @click="loadMembers" :disabled="loadingMembers">
-          {{ loadingMembers ? '刷新中' : '刷新成员' }}
-        </button>
-        <button v-if="canAddMember" class="button primary" @click="dialogOpen = true">添加成员</button>
+        <h1>成员列表</h1>
       </div>
     </div>
 
-    <div class="members-layout">
+    <div class="members-layout members-layout-single">
       <article class="workspace-panel members-table-card">
         <div class="members-toolbar">
           <label class="field search-field">
             <span>搜索成员</span>
             <input v-model.trim="searchKeyword" type="text" placeholder="按用户名搜索成员" />
           </label>
+
+          <div class="inline-actions">
+            <button class="button ghost" @click="loadMembers" :disabled="loadingMembers">
+              {{ loadingMembers ? '刷新中' : '刷新成员' }}
+            </button>
+            <button v-if="canAddMember" class="button primary" @click="dialogOpen = true">添加成员</button>
+          </div>
         </div>
 
         <p v-if="memberActionError" class="error">{{ memberActionError }}</p>
@@ -76,25 +75,6 @@
           </article>
         </div>
       </article>
-
-      <aside class="workspace-aside-card permission-guide-card">
-        <p class="eyebrow">Roles</p>
-        <h2>角色权限说明</h2>
-        <div class="permission-guide-list">
-          <div class="permission-guide-item">
-            <strong>教师</strong>
-            <span>可管理课程与学生成员</span>
-          </div>
-          <div class="permission-guide-item">
-            <strong>助教/教师视角</strong>
-            <span>可管理资料与回复 Agent 会话</span>
-          </div>
-          <div class="permission-guide-item">
-            <strong>学生</strong>
-            <span>可访问资料并发起提问</span>
-          </div>
-        </div>
-      </aside>
     </div>
 
     <div v-if="dialogOpen" class="modal-backdrop" @click.self="closeDialog">
