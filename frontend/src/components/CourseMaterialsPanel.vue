@@ -1,5 +1,5 @@
 <template>
-  <article class="card materials-card">
+  <article class="materials-card">
     <MaterialsToolbar
       :loading="loadingTree"
       :can-manage="canManage"

@@ -1,5 +1,5 @@
 <template>
-  <article class="card agent-card">
+  <article class="agent-card">
     <div class="section-head section-head-top">
       <div>
         <p class="eyebrow">Agent</p>

@@ -12,19 +12,33 @@
       />
     </template>
 
-    <div v-if="loading" class="page-state-card">
-      <p class="eyebrow">Loading</p>
-      <h1>正在加载课程</h1>
-    </div>
+    <section class="course-layout-shell">
+      <div v-if="loading" class="page-state-card">
+        <p class="eyebrow">Loading</p>
+        <h1>正在加载课程</h1>
+      </div>
 
-    <div v-else-if="errorMessage" class="page-state-card">
-      <p class="eyebrow">Unavailable</p>
-      <h1>课程加载失败</h1>
-      <p class="lead">{{ errorMessage }}</p>
-      <button class="button primary" @click="refreshCourse">重新加载</button>
-    </div>
+      <div v-else-if="errorMessage" class="page-state-card">
+        <p class="eyebrow">Unavailable</p>
+        <h1>课程加载失败</h1>
+        <p class="lead">{{ errorMessage }}</p>
+        <button class="button primary" @click="refreshCourse">重新加载</button>
+      </div>
 
-    <RouterView v-else />
+      <template v-else-if="course">
+        <CourseTopTabs
+          :course-id="course.id"
+          :course-name="course.courseName"
+          :course-code="course.courseCode"
+          :role="course.myRole"
+          :status="course.status"
+        />
+
+        <div class="course-workspace-stage">
+          <RouterView />
+        </div>
+      </template>
+    </section>
   </AppShell>
 </template>
 
@@ -33,6 +47,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import AppShell from '@/components/AppShell.vue'
 import CourseSidebar from '@/components/CourseSidebar.vue'
+import CourseTopTabs from '@/components/CourseTopTabs.vue'
 import PlatformTopNav from '@/components/PlatformTopNav.vue'
 import { useAuth } from '@/composables/useAuth'
 import { provideCourseContext } from '@/composables/useCourseContext'

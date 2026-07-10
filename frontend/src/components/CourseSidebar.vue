@@ -2,7 +2,8 @@
   <div class="course-sidebar">
     <div class="course-sidebar-head">
       <p class="eyebrow">课程导航</p>
-      <h2 class="course-sidebar-title">{{ courseName }}</h2>
+      <h2 class="course-sidebar-title">课程工作区</h2>
+      <p class="course-sidebar-copy">{{ courseName }}</p>
     </div>
 
     <nav class="course-sidebar-nav">

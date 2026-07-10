@@ -1,6 +1,6 @@
 <template>
   <section class="page-section">
-    <div class="page-hero">
+    <div class="course-page-head">
       <div>
         <p class="eyebrow">Materials</p>
         <h1>课程资料</h1>
@@ -16,7 +16,7 @@
         :can-manage="canManage"
       />
 
-      <aside class="content-card materials-aside-card">
+      <aside class="workspace-aside-card materials-aside-card">
         <p class="eyebrow">Access</p>
         <h2>资料访问权限</h2>
         <div class="permission-guide-list">

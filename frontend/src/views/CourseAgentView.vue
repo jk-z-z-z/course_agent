@@ -1,6 +1,6 @@
 <template>
   <section class="page-section">
-    <div class="page-hero">
+    <div class="course-page-head">
       <div>
         <p class="eyebrow">Agent</p>
         <h1>课程 Agent</h1>
@@ -16,7 +16,7 @@
         :can-manage="canManage"
       />
 
-      <aside class="content-card agent-aside-card">
+      <aside class="workspace-aside-card agent-aside-card">
         <p class="eyebrow">Guide</p>
         <h2>Agent 使用说明</h2>
         <div class="permission-guide-list">

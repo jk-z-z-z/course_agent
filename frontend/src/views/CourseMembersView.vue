@@ -1,6 +1,6 @@
 <template>
   <section class="page-section">
-    <div class="page-hero">
+    <div class="course-page-head">
       <div>
         <p class="eyebrow">Members</p>
         <h1>课程成员管理</h1>
@@ -16,7 +16,7 @@
     </div>
 
     <div class="members-layout">
-      <article class="content-card members-table-card">
+      <article class="workspace-panel members-table-card">
         <div class="members-toolbar">
           <label class="field search-field">
             <span>搜索成员</span>
@@ -77,7 +77,7 @@
         </div>
       </article>
 
-      <aside class="content-card permission-guide-card">
+      <aside class="workspace-aside-card permission-guide-card">
         <p class="eyebrow">Roles</p>
         <h2>角色权限说明</h2>
         <div class="permission-guide-list">

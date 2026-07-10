@@ -1,6 +1,6 @@
 <template>
   <section class="page-section">
-    <div class="page-hero">
+    <div class="course-page-head">
       <div>
         <p class="eyebrow">Overview</p>
         <h1>{{ course?.courseName || '课程详情' }}</h1>
@@ -21,7 +21,7 @@
     </div>
 
     <div class="overview-grid" v-if="course">
-      <article class="content-card overview-main-card">
+      <article class="workspace-panel overview-main-card">
         <div class="overview-summary">
           <div class="overview-cover">
             <span class="pill">课程名片</span>
@@ -53,7 +53,7 @@
         </div>
       </article>
 
-      <article class="content-card overview-tabs-card">
+      <article class="workspace-panel overview-tabs-card">
         <div class="overview-tabs">
           <button
             v-for="tab in tabs"

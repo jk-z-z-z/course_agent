@@ -300,8 +300,14 @@ button:disabled {
 }
 
 .course-sidebar-title {
-  font-size: 24px;
+  font-size: 20px;
   color: #111827;
+}
+
+.course-sidebar-copy {
+  margin: 8px 0 0;
+  color: #6b7280;
+  line-height: 1.6;
 }
 
 .course-sidebar-nav {
@@ -336,6 +342,83 @@ button:disabled {
 .page-section {
   display: grid;
   gap: 20px;
+}
+
+.course-page-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: end;
+}
+
+.course-layout-shell {
+  display: grid;
+  gap: 20px;
+}
+
+.course-workspace-stage {
+  min-height: 560px;
+  padding: 28px 30px 32px;
+  border-radius: 28px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.course-top-tabs {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 26px 28px 18px;
+  border-radius: 28px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background:
+    linear-gradient(135deg, rgba(214, 255, 248, 0.82), rgba(255, 251, 232, 0.86)),
+    rgba(255, 255, 255, 0.82);
+}
+
+.course-top-tabs-copy h1 {
+  color: #111827;
+  font-size: clamp(26px, 4vw, 42px);
+}
+
+.course-top-tabs-subtitle {
+  margin: 12px 0 0;
+  color: #4b5563;
+  font-size: 15px;
+}
+
+.course-top-tabs-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.course-top-tab-link {
+  padding: 12px 18px;
+  border-radius: 999px;
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.course-top-tab-link.active {
+  background: rgba(255, 255, 255, 0.84);
+  color: #0f9e83;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.workspace-panel {
+  padding: 0;
+  border-radius: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.workspace-aside-card {
+  padding: 20px 0 0 24px;
+  border-left: 1px dashed rgba(15, 23, 42, 0.12);
 }
 
 .page-hero,
@@ -534,10 +617,10 @@ button:disabled {
 }
 
 .overview-rich-block {
-  padding: 20px 22px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.68);
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 20px 0 0;
+  border-radius: 0;
+  background: transparent;
+  border: 0;
 }
 
 .overview-lead {
@@ -557,8 +640,8 @@ button:disabled {
   gap: 8px;
   padding: 18px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.65);
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(15, 23, 42, 0.06);
 }
 
 .overview-info-item strong,
@@ -616,9 +699,9 @@ button:disabled {
 
 .member-table-row {
   padding: 16px 12px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 14px;
+  background: rgba(248, 250, 252, 0.72);
+  border: 1px solid rgba(15, 23, 42, 0.05);
 }
 
 .member-profile-cell {
@@ -657,10 +740,11 @@ button:disabled {
 .permission-guide-item {
   display: grid;
   gap: 8px;
-  padding: 18px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.65);
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 18px 0;
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px dashed rgba(15, 23, 42, 0.12);
 }
 
 .permission-guide-item strong {
@@ -1030,6 +1114,22 @@ h3 {
 }
 
 @media (max-width: 980px) {
+  .course-page-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .workspace-aside-card {
+    padding: 20px 0 0;
+    border-left: 0;
+    border-top: 1px dashed rgba(15, 23, 42, 0.12);
+  }
+
+  .course-top-tabs {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .members-layout {
     grid-template-columns: 1fr;
   }
@@ -1134,11 +1234,11 @@ h3 {
 }
 
 .materials-card {
-  padding: 28px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.12);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   color: #111827;
 }
 
@@ -1159,8 +1259,8 @@ h3 {
 .materials-tree-panel {
   padding: 18px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid rgba(15, 23, 42, 0.06);
   min-height: 260px;
 }
 
@@ -1176,7 +1276,7 @@ h3 {
 
 .materials-detail-panel {
   min-height: 260px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.42);
 }
 
 .materials-detail-shell {
@@ -1281,8 +1381,8 @@ h3 {
 .material-stat-card {
   padding: 16px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.68);
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.46);
+  border: 1px solid rgba(15, 23, 42, 0.06);
 }
 
 .value.minor {
@@ -1323,11 +1423,11 @@ h3 {
 }
 
 .agent-card {
-  padding: 28px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.12);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   color: #111827;
 }
 
