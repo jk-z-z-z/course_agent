@@ -1,25 +1,25 @@
 :root {
   font-family: 'Avenir Next', 'PingFang SC', 'Helvetica Neue', sans-serif;
-  color: #f4efe6;
+  color: #111827;
   background:
-    radial-gradient(circle at top left, rgba(255, 166, 77, 0.22), transparent 28%),
-    radial-gradient(circle at top right, rgba(46, 137, 255, 0.18), transparent 24%),
-    linear-gradient(180deg, #16110f 0%, #221916 55%, #0f1620 100%);
+    radial-gradient(circle at top left, rgba(255, 230, 177, 0.52), transparent 28%),
+    radial-gradient(circle at top right, rgba(184, 238, 255, 0.46), transparent 24%),
+    linear-gradient(180deg, #f6fbf9 0%, #eef9f6 48%, #edf6ff 100%);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  --surface-strong: rgba(20, 16, 14, 0.84);
-  --surface-soft: rgba(255, 255, 255, 0.05);
-  --surface-muted: rgba(255, 255, 255, 0.03);
-  --border-strong: rgba(255, 255, 255, 0.12);
-  --border-soft: rgba(255, 255, 255, 0.08);
-  --text-main: #f4efe6;
-  --text-subtle: rgba(244, 239, 230, 0.72);
-  --text-faint: rgba(244, 239, 230, 0.52);
-  --accent-warm: #ffb14a;
-  --accent-cool: #57c6ff;
-  --danger: #ff9e8f;
+  --surface-strong: rgba(255, 255, 255, 0.84);
+  --surface-soft: rgba(255, 255, 255, 0.68);
+  --surface-muted: rgba(255, 255, 255, 0.5);
+  --border-strong: rgba(15, 23, 42, 0.1);
+  --border-soft: rgba(15, 23, 42, 0.08);
+  --text-main: #111827;
+  --text-subtle: #4b5563;
+  --text-faint: #6b7280;
+  --accent-warm: #18c3a5;
+  --accent-cool: #0ea5e9;
+  --danger: #ef6b73;
 }
 
 * {
@@ -35,6 +35,7 @@ body,
 
 body {
   min-height: 100vh;
+  color: var(--text-main);
 }
 
 a {
@@ -593,7 +594,7 @@ button:disabled {
   margin: 0 0 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--accent-cool);
+  color: #0f9e83;
   font-size: 12px;
 }
 
@@ -663,7 +664,7 @@ h3 {
   padding: 14px 16px;
   border: 1px solid var(--border-strong);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.78);
   color: var(--text-main);
   outline: none;
 }
@@ -676,8 +677,8 @@ h3 {
 .field input:focus,
 .field textarea:focus,
 .field select:focus {
-  border-color: rgba(87, 198, 255, 0.8);
-  box-shadow: 0 0 0 3px rgba(87, 198, 255, 0.14);
+  border-color: rgba(24, 195, 165, 0.45);
+  box-shadow: 0 0 0 3px rgba(24, 195, 165, 0.12);
 }
 
 .button {
@@ -698,21 +699,21 @@ h3 {
 }
 
 .button.primary {
-  background: linear-gradient(135deg, var(--accent-warm), #ff7f51);
-  color: #1f120d;
+  background: linear-gradient(135deg, var(--accent-warm), #0db8a2);
+  color: white;
   font-weight: 700;
 }
 
 .button.ghost {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.72);
   color: var(--text-main);
   border-color: var(--border-soft);
 }
 
 .button.danger {
-  background: rgba(255, 120, 104, 0.12);
-  border-color: rgba(255, 120, 104, 0.3);
-  color: #ffd7cf;
+  background: rgba(239, 107, 115, 0.1);
+  border-color: rgba(239, 107, 115, 0.24);
+  color: #c2414b;
 }
 
 .button.compact {
@@ -874,16 +875,16 @@ h3 {
   justify-content: center;
   padding: 8px 14px;
   border-radius: 999px;
-  background: rgba(87, 198, 255, 0.12);
-  border: 1px solid rgba(87, 198, 255, 0.18);
-  color: #bcecff;
+  background: rgba(24, 195, 165, 0.12);
+  border: 1px solid rgba(24, 195, 165, 0.18);
+  color: #0f9e83;
   font-size: 13px;
 }
 
 .pill.subtle {
-  background: rgba(255, 177, 74, 0.12);
-  border-color: rgba(255, 177, 74, 0.16);
-  color: #ffd89f;
+  background: rgba(14, 165, 233, 0.1);
+  border-color: rgba(14, 165, 233, 0.16);
+  color: #0369a1;
 }
 
 .member-side {
@@ -980,7 +981,7 @@ h3 {
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgba(5, 6, 10, 0.65);
+  background: rgba(15, 23, 42, 0.16);
   backdrop-filter: blur(10px);
 }
 
