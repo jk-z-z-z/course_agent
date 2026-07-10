@@ -104,7 +104,7 @@ import { useAuth } from '@/composables/useAuth'
 import type { CourseRole, CourseStatus, CourseVO } from '@/types/course'
 import { formatDateTime } from '@/utils/date'
 
-type FilterValue = 'all' | 'owned' | 'joined'
+type FilterValue = 'all' | 'joined' | 'managed' | 'owned'
 
 const router = useRouter()
 const route = useRoute()
@@ -124,16 +124,20 @@ const courseForm = reactive({
 
 const filters = [
   { value: 'all' as FilterValue, label: '全部课程', description: '查看所有已加入课程' },
-  { value: 'owned' as FilterValue, label: '我创建的', description: '仅查看我是创建者的课程' },
   { value: 'joined' as FilterValue, label: '我参与的', description: '查看教师或学生身份加入的课程' },
+  { value: 'managed' as FilterValue, label: '我管理的', description: '查看我负责管理的课程' },
+  { value: 'owned' as FilterValue, label: '我创建的', description: '仅查看我是创建者的课程' },
 ]
 
 const filteredCourses = computed(() => {
+  if (activeFilter.value === 'joined') {
+    return courses.value.filter((course) => course.myRole === 'student')
+  }
+  if (activeFilter.value === 'managed') {
+    return courses.value.filter((course) => course.myRole === 'owner' || course.myRole === 'teacher')
+  }
   if (activeFilter.value === 'owned') {
     return courses.value.filter((course) => course.myRole === 'owner')
-  }
-  if (activeFilter.value === 'joined') {
-    return courses.value.filter((course) => course.myRole !== 'owner')
   }
   return courses.value
 })
