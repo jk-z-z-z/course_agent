@@ -36,10 +36,6 @@ func (r *AgentRepository) GetCourseAgentByCourseID(ctx context.Context, courseID
 	return &agent, nil
 }
 
-func (r *AgentRepository) UpdateCourseAgent(ctx context.Context, agent *model.CourseAgent) error {
-	return r.db.WithContext(ctx).Save(agent).Error
-}
-
 func (r *AgentRepository) CreateConversation(ctx context.Context, conversation *model.AgentConversation) error {
 	return r.db.WithContext(ctx).Create(conversation).Error
 }

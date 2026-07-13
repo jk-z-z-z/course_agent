@@ -33,14 +33,17 @@ type AgentMessageSourceVO struct {
 	CreatedAt      time.Time `json:"createdAt"`
 }
 
+type AgentRetrievedMaterialVO = AgentMessageSourceVO
+
 type AgentMessageVO struct {
-	ID             uint64                 `json:"id"`
-	ConversationID uint64                 `json:"conversationId"`
-	SenderType     string                 `json:"senderType"`
-	MessageContent string                 `json:"messageContent"`
-	TokenUsage     int                    `json:"tokenUsage"`
-	CreatedAt      time.Time              `json:"createdAt"`
-	Sources        []AgentMessageSourceVO `json:"sources,omitempty"`
+	ID                 uint64                     `json:"id"`
+	ConversationID     uint64                     `json:"conversationId"`
+	SenderType         string                     `json:"senderType"`
+	MessageContent     string                     `json:"messageContent"`
+	TokenUsage         int                        `json:"tokenUsage"`
+	CreatedAt          time.Time                  `json:"createdAt"`
+	Sources            []AgentMessageSourceVO     `json:"sources,omitempty"`
+	RetrievedMaterials []AgentRetrievedMaterialVO `json:"retrievedMaterials,omitempty"`
 }
 
 type AgentConversationDetailVO struct {
@@ -49,8 +52,9 @@ type AgentConversationDetailVO struct {
 }
 
 type AgentAskResultVO struct {
-	ConversationID uint64                 `json:"conversationId"`
-	Question       string                 `json:"question"`
-	Answer         string                 `json:"answer"`
-	Sources        []AgentMessageSourceVO `json:"sources"`
+	ConversationID     uint64                     `json:"conversationId"`
+	Question           string                     `json:"question"`
+	Answer             string                     `json:"answer"`
+	Sources            []AgentMessageSourceVO     `json:"sources"`
+	RetrievedMaterials []AgentRetrievedMaterialVO `json:"retrievedMaterials"`
 }

@@ -73,7 +73,7 @@ func (s *UserService) Login(ctx context.Context, username, password string) (str
 		return "", time.Time{}, nil, apperrors.ErrUserDisabled
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
-		return "", time.Time{}, nil, apperrors.ErrSessionExpired
+		return "", time.Time{}, nil, apperrors.ErrInvalidCredential
 	}
 
 	token, err := generateToken()

@@ -29,7 +29,7 @@ func NewAgentService(courseRepo *repository.CourseRepository, agentRepo *reposit
 }
 
 func (s *AgentService) GetAgent(ctx context.Context, userID, courseID uint64) (*vo.CourseAgentVO, error) {
-	_, role, err := s.requireCourseMember(ctx, userID, courseID)
+	_, _, err := s.requireCourseMember(ctx, userID, courseID)
 	if err != nil {
 		return nil, err
 	}
@@ -40,47 +40,7 @@ func (s *AgentService) GetAgent(ctx context.Context, userID, courseID uint64) (*
 		}
 		return nil, err
 	}
-	result := toCourseAgentVO(agentModel, role == "owner" || role == "teacher")
-	return &result, nil
-}
-
-func (s *AgentService) UpdateAgent(ctx context.Context, userID, courseID uint64, agentName, promptTemplate, status, retrievalScope string) (*vo.CourseAgentVO, error) {
-	_, role, err := s.requireCourseMember(ctx, userID, courseID)
-	if err != nil {
-		return nil, err
-	}
-	if role != "owner" && role != "teacher" {
-		return nil, apperrors.ErrForbidden
-	}
-	agentModel, err := s.agentRepo.GetCourseAgentByCourseID(ctx, courseID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, apperrors.ErrAgentNotFound
-		}
-		return nil, err
-	}
-	if trimmed := strings.TrimSpace(agentName); trimmed != "" {
-		agentModel.AgentName = trimmed
-	}
-	if trimmed := strings.TrimSpace(promptTemplate); trimmed != "" {
-		agentModel.PromptTemplate = trimmed
-	}
-	if trimmed := strings.TrimSpace(status); trimmed != "" {
-		if trimmed != "enabled" && trimmed != "disabled" {
-			return nil, apperrors.ErrInvalidParameter
-		}
-		agentModel.Status = trimmed
-	}
-	if trimmed := strings.TrimSpace(retrievalScope); trimmed != "" {
-		if trimmed != "course_all" {
-			return nil, apperrors.ErrInvalidParameter
-		}
-		agentModel.RetrievalScope = trimmed
-	}
-	if err := s.agentRepo.UpdateCourseAgent(ctx, agentModel); err != nil {
-		return nil, err
-	}
-	result := toCourseAgentVO(agentModel, true)
+	result := toCourseAgentVO(agentModel, false)
 	return &result, nil
 }
 
@@ -171,14 +131,16 @@ func (s *AgentService) GetConversationDetail(ctx context.Context, userID, course
 	}
 	messageVOs := make([]vo.AgentMessageVO, 0, len(messages))
 	for _, message := range messages {
+		messageSources := byMessageID[message.ID]
 		messageVOs = append(messageVOs, vo.AgentMessageVO{
-			ID:             message.ID,
-			ConversationID: message.ConversationID,
-			SenderType:     message.SenderType,
-			MessageContent: message.MessageContent,
-			TokenUsage:     message.TokenUsage,
-			CreatedAt:      message.CreatedAt,
-			Sources:        byMessageID[message.ID],
+			ID:                 message.ID,
+			ConversationID:     message.ConversationID,
+			SenderType:         message.SenderType,
+			MessageContent:     message.MessageContent,
+			TokenUsage:         message.TokenUsage,
+			CreatedAt:          message.CreatedAt,
+			Sources:            messageSources,
+			RetrievedMaterials: messageSources,
 		})
 	}
 	result := &vo.AgentConversationDetailVO{Conversation: toConversationVO(conversation), Messages: messageVOs}
@@ -261,13 +223,26 @@ func (s *AgentService) ask(ctx context.Context, userID, courseID, conversationID
 		return nil, fmt.Errorf("%w: %v", apperrors.New(apperrors.ErrAgentUnavailable.Code, publicMessage), err)
 	}
 
-	result := &vo.AgentAskResultVO{ConversationID: conversationID, Question: trimmedQuestion, Answer: answer.Answer, Sources: make([]vo.AgentMessageSourceVO, 0, len(answer.Sources))}
-	for _, source := range answer.Sources {
-		result.Sources = append(result.Sources, vo.AgentMessageSourceVO{
+	retrievedMaterials := answer.RetrievedMaterials
+	if len(retrievedMaterials) == 0 {
+		retrievedMaterials = answer.Sources
+	}
+
+	result := &vo.AgentAskResultVO{
+		ConversationID:     conversationID,
+		Question:           trimmedQuestion,
+		Answer:             answer.Answer,
+		Sources:            make([]vo.AgentMessageSourceVO, 0, len(retrievedMaterials)),
+		RetrievedMaterials: make([]vo.AgentRetrievedMaterialVO, 0, len(retrievedMaterials)),
+	}
+	for _, source := range retrievedMaterials {
+		sourceVO := vo.AgentMessageSourceVO{
 			MaterialNodeID: source.MaterialNodeID,
 			FileName:       source.FileName,
 			SnippetText:    source.Snippet,
-		})
+		}
+		result.Sources = append(result.Sources, sourceVO)
+		result.RetrievedMaterials = append(result.RetrievedMaterials, sourceVO)
 	}
 
 	err = s.agentRepo.Transaction(ctx, func(tx *gorm.DB) error {
@@ -279,8 +254,8 @@ func (s *AgentService) ask(ctx context.Context, userID, courseID, conversationID
 		if err := s.agentRepo.CreateMessageTx(tx, agentMessage); err != nil {
 			return err
 		}
-		sourceModels := make([]model.AgentMessageSource, 0, len(answer.Sources))
-		for _, source := range answer.Sources {
+		sourceModels := make([]model.AgentMessageSource, 0, len(retrievedMaterials))
+		for _, source := range retrievedMaterials {
 			sourceModels = append(sourceModels, model.AgentMessageSource{MessageID: agentMessage.ID, MaterialNodeID: source.MaterialNodeID, MaterialVersionID: source.VersionID, SnippetText: source.Snippet, CreatedAt: time.Now()})
 		}
 		if err := s.agentRepo.CreateMessageSourcesTx(tx, sourceModels); err != nil {

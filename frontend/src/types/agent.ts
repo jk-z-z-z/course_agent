@@ -14,13 +14,6 @@ export interface CourseAgentVO {
   updatedAt: string
 }
 
-export interface UpdateCourseAgentPayload {
-  agentName: string
-  promptTemplate: string
-  status: AgentStatus
-  retrievalScope: AgentRetrievalScope
-}
-
 export interface AgentConversationVO {
   id: number
   courseId: number
@@ -44,6 +37,8 @@ export interface AgentMessageSourceVO {
   createdAt?: string
 }
 
+export type AgentRetrievedMaterialVO = AgentMessageSourceVO
+
 export interface AgentMessageVO {
   id: number
   conversationId: number
@@ -52,6 +47,7 @@ export interface AgentMessageVO {
   tokenUsage: number
   createdAt: string
   sources?: AgentMessageSourceVO[]
+  retrievedMaterials?: AgentRetrievedMaterialVO[]
 }
 
 export interface AgentConversationDetailVO {
@@ -69,6 +65,7 @@ export interface AgentAskResultVO {
   question: string
   answer: string
   sources: AgentMessageSourceVO[]
+  retrievedMaterials: AgentRetrievedMaterialVO[]
 }
 
 export interface CourseAgentStreamDeltaEvent {
@@ -78,5 +75,6 @@ export interface CourseAgentStreamDeltaEvent {
 export interface CourseAgentStreamCompleteEvent {
   answer: string
   sources: AgentMessageSourceVO[]
+  retrievedMaterials: AgentRetrievedMaterialVO[]
   tokenUsage: number
 }

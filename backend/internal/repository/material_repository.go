@@ -126,11 +126,15 @@ func (r *MaterialRepository) ListActiveDescendantsByPath(ctx context.Context, co
 
 func (r *MaterialRepository) UpdateNodes(ctx context.Context, nodes []model.CourseMaterialNode) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		for i := range nodes {
-			if err := tx.Save(&nodes[i]).Error; err != nil {
-				return err
-			}
-		}
-		return nil
+		return r.UpdateNodesTx(tx, nodes)
 	})
+}
+
+func (r *MaterialRepository) UpdateNodesTx(tx *gorm.DB, nodes []model.CourseMaterialNode) error {
+	for i := range nodes {
+		if err := tx.Save(&nodes[i]).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }

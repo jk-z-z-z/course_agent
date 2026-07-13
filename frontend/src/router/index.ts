@@ -21,7 +21,7 @@ const routes = [
         children: [
           {
             path: '',
-            redirect: (to: { params: { courseId?: string } }) => `/courses/${to.params.courseId}/overview`,
+            redirect: (to: { params: { courseId?: string } }) => `/courses/${to.params.courseId}/agent`,
           },
           {
             path: 'overview',

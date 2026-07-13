@@ -5,6 +5,24 @@
         <div>
           <h4 class="material-title">{{ detail.nodeName }}</h4>
         </div>
+        <div class="inline-actions">
+          <button
+            v-if="canManage"
+            class="button ghost compact"
+            type="button"
+            @click="$emit('rename', detail)"
+          >
+            重命名
+          </button>
+          <button
+            v-if="detail.nodeType === 'file'"
+            class="button ghost compact"
+            type="button"
+            @click="$emit('download', detail)"
+          >
+            下载
+          </button>
+        </div>
       </div>
 
       <div v-if="detail.nodeType === 'folder'" class="materials-folder-view">
@@ -66,6 +84,12 @@ const props = defineProps<{
   previewText: string
   previewMimeType: string
   tree: MaterialTreeNodeVO[]
+  canManage: boolean
+}>()
+
+defineEmits<{
+  rename: [detail: MaterialDetailVO]
+  download: [detail: MaterialDetailVO]
 }>()
 
 const folderChildren = computed(() => {

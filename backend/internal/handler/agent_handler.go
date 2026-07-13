@@ -35,30 +35,6 @@ func (h *AgentHandler) GetAgent(c *gin.Context) {
 	})
 }
 
-func (h *AgentHandler) UpdateAgent(c *gin.Context) {
-	courseID, ok := parseUintParam(c, "courseId")
-	if !ok {
-		response.Fail(c, http.StatusBadRequest, apperrors.ErrInvalidParameter.Code, apperrors.ErrInvalidParameter.Message)
-		return
-	}
-	userID, ok := authcontext.UserID(c.Request.Context())
-	if !ok || userID == 0 {
-		response.Fail(c, http.StatusUnauthorized, apperrors.ErrUnauthorized.Code, apperrors.ErrUnauthorized.Message)
-		return
-	}
-	var req dto.UpdateCourseAgentRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, http.StatusBadRequest, apperrors.ErrInvalidParameter.Code, apperrors.ErrInvalidParameter.Message)
-		return
-	}
-	data, err := h.service.UpdateAgent(c.Request.Context(), userID, courseID, strings.TrimSpace(req.AgentName), strings.TrimSpace(req.PromptTemplate), strings.TrimSpace(req.Status), strings.TrimSpace(req.RetrievalScope))
-	if err != nil {
-		h.writeError(c, err)
-		return
-	}
-	response.Success(c, data)
-}
-
 func (h *AgentHandler) CreateConversation(c *gin.Context) {
 	courseID, ok := parseUintParam(c, "courseId")
 	if !ok {
@@ -171,9 +147,10 @@ func (h *AgentHandler) AskStream(c *gin.Context) {
 			return writeSSE(c, "delta", map[string]any{"content": event.Content})
 		case agentruntime.StreamEventComplete:
 			return writeSSE(c, "complete", map[string]any{
-				"answer":     event.Answer,
-				"sources":    event.Sources,
-				"tokenUsage": event.TokenUsage,
+				"answer":             event.Answer,
+				"sources":            event.Sources,
+				"retrievedMaterials": event.RetrievedMaterials,
+				"tokenUsage":         event.TokenUsage,
 			})
 		default:
 			return nil

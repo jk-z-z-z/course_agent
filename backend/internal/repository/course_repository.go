@@ -48,6 +48,17 @@ func (r *CourseRepository) ListCoursesByUserID(ctx context.Context, userID uint6
 	return members, nil
 }
 
+func (r *CourseRepository) ListActiveCourses(ctx context.Context) ([]model.Course, error) {
+	var courses []model.Course
+	if err := r.db.WithContext(ctx).
+		Where("status = ?", "active").
+		Order("updated_at DESC, id DESC").
+		Find(&courses).Error; err != nil {
+		return nil, err
+	}
+	return courses, nil
+}
+
 func (r *CourseRepository) GetMember(ctx context.Context, courseID, userID uint64) (*model.CourseMember, error) {
 	var member model.CourseMember
 	if err := r.db.WithContext(ctx).Where("course_id = ? AND user_id = ?", courseID, userID).First(&member).Error; err != nil {

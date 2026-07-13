@@ -1,7 +1,7 @@
 <template>
   <div class="materials-toolbar-shell">
-    <button v-if="canManage" class="button ghost compact" @click="$emit('create-folder')">新建文件夹</button>
-    <button v-if="canManage" class="button primary compact" @click="$emit('upload')">上传文件</button>
+    <button v-if="canManage" class="workspace-side-action" @click="$emit('create-folder')">新建</button>
+    <button v-if="canManage" class="workspace-side-action primary" @click="$emit('upload')">上传</button>
   </div>
 </template>
 

@@ -1,50 +1,37 @@
 <template>
   <article class="agent-card">
-    <div class="section-head section-head-top">
-      <div>
-        <p class="eyebrow">Chat</p>
-        <h3>课程对话</h3>
-      </div>
-      <div class="inline-actions">
-        <button class="button ghost compact" @click="reloadAll" :disabled="loadingOverview || sendingQuestion">
-          {{ loadingOverview ? '刷新中' : '刷新' }}
-        </button>
-        <button class="button primary compact" @click="handleCreateConversation" :disabled="creatingConversation || sendingQuestion">
-          {{ creatingConversation ? '创建中' : '新会话' }}
-        </button>
-      </div>
-    </div>
-
     <p v-if="overviewError" class="error">{{ overviewError }}</p>
 
-    <div v-if="agent" class="agent-main-panel">
-        <AgentConversationList
-          :conversations="conversations"
-          :selected-conversation-id="selectedConversationId"
-          :error-message="conversationError"
-          @select="selectConversation"
-        />
+    <div v-if="agent" class="workspace-split-shell agent-main-panel" :class="{ 'is-collapsed': conversationCollapsed }">
+      <AgentChatPanel
+        :detail="selectedConversationDetail"
+        :agent-name="agent.agentName"
+        :loading-conversation="loadingConversation"
+        :sending-question="sendingQuestion"
+        :error-message="chatError"
+        :question="questionForm.question"
+        :agent-enabled="agent.status === 'enabled'"
+        @submit-question="submitQuestion"
+        @update:question="questionForm.question = $event"
+      />
 
-        <AgentChatPanel
-          :detail="selectedConversationDetail"
-          :agent-name="agent.agentName"
-          :current-conversation-title="currentConversationTitle"
-          :selected-conversation-id="selectedConversationId"
-          :loading-conversation="loadingConversation"
-          :sending-question="sendingQuestion"
-          :error-message="chatError"
-          :question="questionForm.question"
-          :agent-enabled="agent.status === 'enabled'"
-          @reload="reloadConversation"
-          @submit-question="submitQuestion"
-          @update:question="questionForm.question = $event"
-        />
+      <AgentConversationList
+        :conversations="conversations"
+        :selected-conversation-id="selectedConversationId"
+        :error-message="conversationError"
+        :creating-conversation="creatingConversation"
+        :sending-question="sendingQuestion"
+        :collapsed="conversationCollapsed"
+        @select="selectConversation"
+        @create="handleCreateConversation"
+        @toggle-collapsed="conversationCollapsed = !conversationCollapsed"
+      />
     </div>
   </article>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import AgentChatPanel from '@/components/AgentChatPanel.vue'
 import AgentConversationList from '@/components/AgentConversationList.vue'
 import {
@@ -79,11 +66,10 @@ const sendingQuestion = ref(false)
 const overviewError = ref('')
 const conversationError = ref('')
 const chatError = ref('')
+const conversationCollapsed = ref(false)
 const questionForm = reactive({
   question: '',
 })
-
-const currentConversationTitle = computed(() => selectedConversationDetail.value?.conversation.conversationTitle || '未选择会话')
 
 watch(
   () => props.courseId,
@@ -137,10 +123,6 @@ async function loadOverview() {
   }
 }
 
-async function reloadAll() {
-  await loadOverview()
-}
-
 async function selectConversation(conversationId: number) {
   selectedConversationId.value = conversationId
   chatError.value = ''
@@ -153,11 +135,6 @@ async function selectConversation(conversationId: number) {
   } finally {
     loadingConversation.value = false
   }
-}
-
-async function reloadConversation() {
-  if (!selectedConversationId.value) return
-  await selectConversation(selectedConversationId.value)
 }
 
 async function handleCreateConversation() {
@@ -201,13 +178,14 @@ async function submitQuestion() {
       onDelta: ({ content }) => {
         agentMessage.messageContent += content
       },
-      onComplete: ({ answer, sources, tokenUsage }) => {
+      onComplete: ({ answer, sources, retrievedMaterials, tokenUsage }) => {
         agentMessage.messageContent = answer || agentMessage.messageContent
         agentMessage.sources = sources
+        agentMessage.retrievedMaterials = retrievedMaterials?.length ? retrievedMaterials : sources
         agentMessage.tokenUsage = tokenUsage
       },
     })
-    await Promise.all([reloadConversation(), reloadConversations()])
+    await Promise.all([selectConversation(conversationId), reloadConversations()])
   } catch (error) {
     rollback()
     chatError.value = error instanceof Error ? error.message : '提问失败'
@@ -265,6 +243,7 @@ function appendLocalMessages(conversationId: number, question: string) {
     tokenUsage: 0,
     createdAt: timestamp,
     sources: [] as AgentMessageSourceVO[],
+    retrievedMaterials: [] as AgentMessageSourceVO[],
   }
   detail.messages = [...detail.messages, userMessage, agentMessage]
   return { agentMessage }
@@ -277,6 +256,7 @@ function snapshotMessages() {
         messages: selectedConversationDetail.value.messages.map((message) => ({
           ...message,
           sources: message.sources?.map((source) => ({ ...source })),
+          retrievedMaterials: message.retrievedMaterials?.map((material) => ({ ...material })),
         })),
       }
     : null

@@ -8,7 +8,6 @@ import type {
   CourseAgentStreamDeltaEvent,
   CourseAgentVO,
   CreateAgentConversationPayload,
-  UpdateCourseAgentPayload,
 } from '@/types/agent'
 
 function authHeaders(token: string) {
@@ -20,14 +19,6 @@ function authHeaders(token: string) {
 export function getCourseAgent(token: string, courseId: number) {
   return request<CourseAgentVO>(`/api/courses/${courseId}/agent`, {
     headers: authHeaders(token),
-  })
-}
-
-export function updateCourseAgent(token: string, courseId: number, payload: UpdateCourseAgentPayload) {
-  return request<CourseAgentVO>(`/api/courses/${courseId}/agent`, {
-    method: 'PUT',
-    headers: authHeaders(token),
-    body: JSON.stringify(payload),
   })
 }
 

@@ -36,9 +36,10 @@ type AskRequest struct {
 }
 
 type AskResponse struct {
-	Answer     string
-	Sources    []Source
-	TokenUsage int
+	Answer             string
+	Sources            []Source
+	RetrievedMaterials []Source
+	TokenUsage         int
 }
 
 type StreamEventType string
@@ -49,11 +50,12 @@ const (
 )
 
 type StreamEvent struct {
-	Type       StreamEventType
-	Content    string
-	Answer     string
-	Sources    []Source
-	TokenUsage int
+	Type               StreamEventType
+	Content            string
+	Answer             string
+	Sources            []Source
+	RetrievedMaterials []Source
+	TokenUsage         int
 }
 
 type Client interface {

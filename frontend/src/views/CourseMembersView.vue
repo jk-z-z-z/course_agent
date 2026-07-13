@@ -1,25 +1,14 @@
 <template>
-  <section class="page-section">
-    <div class="course-page-head course-page-head-compact">
-      <div>
-        <p class="eyebrow">Members</p>
-        <h1>成员列表</h1>
-      </div>
-    </div>
-
-    <div class="members-layout members-layout-single">
-      <article class="workspace-panel members-table-card">
+  <section class="members-page">
+    <div class="members-layout">
+      <article class="members-table-card">
         <div class="members-toolbar">
-          <label class="field search-field">
-            <span>搜索成员</span>
+          <label class="members-search-field">
             <input v-model.trim="searchKeyword" type="text" placeholder="按用户名搜索成员" />
           </label>
 
           <div class="inline-actions">
-            <button class="button ghost" @click="loadMembers" :disabled="loadingMembers">
-              {{ loadingMembers ? '刷新中' : '刷新成员' }}
-            </button>
-            <button v-if="canAddMember" class="button primary" @click="dialogOpen = true">添加成员</button>
+            <button v-if="canAddMember" class="button primary compact" @click="dialogOpen = true">添加成员</button>
           </div>
         </div>
 
@@ -33,7 +22,6 @@
           <div class="member-table-head">
             <span>成员</span>
             <span>角色</span>
-            <span>加入时间</span>
             <span>操作</span>
           </div>
 
@@ -42,7 +30,6 @@
               <div class="member-avatar">{{ member.username.slice(0, 1).toUpperCase() }}</div>
               <div>
                 <p class="member-name">{{ member.username }}</p>
-                <p class="member-meta">ID {{ member.userId }}</p>
               </div>
             </div>
 
@@ -59,8 +46,6 @@
               </template>
               <span v-else class="pill subtle">{{ roleLabel(member.role) }}</span>
             </div>
-
-            <span class="member-row-copy">{{ formatDateTime(member.joinedAt) }}</span>
 
             <div class="inline-actions">
               <button
@@ -123,7 +108,6 @@ import {
 import { useAuth } from '@/composables/useAuth'
 import { useCourseContext } from '@/composables/useCourseContext'
 import type { CourseMemberVO, CourseRole } from '@/types/course'
-import { formatDateTime } from '@/utils/date'
 
 type EditableRole = 'teacher' | 'student'
 

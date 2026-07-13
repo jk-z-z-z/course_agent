@@ -20,6 +20,12 @@ export function listCourses(token: string) {
   })
 }
 
+export function listDiscoverableCourses(token: string) {
+  return request<CourseVO[]>('/api/courses/discover', {
+    headers: authHeaders(token),
+  })
+}
+
 export function getCourse(token: string, courseId: number) {
   return request<CourseVO>(`/api/courses/${courseId}`, {
     headers: authHeaders(token),
@@ -45,6 +51,13 @@ export function updateCourse(token: string, courseId: number, payload: UpdateCou
 export function deleteCourse(token: string, courseId: number) {
   return request<null>(`/api/courses/${courseId}`, {
     method: 'DELETE',
+    headers: authHeaders(token),
+  })
+}
+
+export function joinCourse(token: string, courseId: number) {
+  return request<CourseMemberVO>(`/api/courses/${courseId}/join`, {
+    method: 'POST',
     headers: authHeaders(token),
   })
 }

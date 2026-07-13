@@ -1,20 +1,11 @@
 <template>
-  <section class="page-section">
-    <div class="course-page-head course-page-head-compact">
-      <div>
-        <p class="eyebrow">Agent</p>
-        <h1>课程对话</h1>
-      </div>
-    </div>
-
-    <div class="agent-page-layout agent-page-layout-single">
-      <CourseAgentPanel
-        v-if="course && token"
-        :course-id="course.id"
-        :token="token"
-        :can-manage="canManage"
-      />
-    </div>
+  <section class="agent-page">
+    <CourseAgentPanel
+      v-if="course && token"
+      :course-id="course.id"
+      :token="token"
+      :can-manage="canManage"
+    />
   </section>
 </template>
 

@@ -52,7 +52,7 @@ func (c *EinoClient) Ask(ctx context.Context, request agenttypes.AskRequest) (*a
 }
 
 func (c *EinoClient) AskStream(ctx context.Context, request agenttypes.AskRequest, onEvent func(agenttypes.StreamEvent) error) (*agenttypes.AskResponse, error) {
-	reactAgent, agentOptions, collectSources, err := c.newReActAgent(ctx, request)
+	reactAgent, agentOptions, collectRetrievedMaterials, err := c.newReActAgent(ctx, request)
 	if err != nil {
 		return nil, err
 	}
@@ -92,9 +92,16 @@ func (c *EinoClient) AskStream(ctx context.Context, request agenttypes.AskReques
 	}
 
 	result.Answer = strings.TrimSpace(answerBuilder.String())
-	result.Sources = collectSources()
+	result.RetrievedMaterials = collectRetrievedMaterials()
+	result.Sources = result.RetrievedMaterials
 	if onEvent != nil {
-		if err := onEvent(agenttypes.StreamEvent{Type: agenttypes.StreamEventComplete, Answer: result.Answer, Sources: result.Sources, TokenUsage: result.TokenUsage}); err != nil {
+		if err := onEvent(agenttypes.StreamEvent{
+			Type:               agenttypes.StreamEventComplete,
+			Answer:             result.Answer,
+			Sources:            result.Sources,
+			RetrievedMaterials: result.RetrievedMaterials,
+			TokenUsage:         result.TokenUsage,
+		}); err != nil {
 			return nil, err
 		}
 	}

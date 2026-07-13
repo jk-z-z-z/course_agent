@@ -1,13 +1,11 @@
 <template>
-  <section class="page-section">
-    <div class="materials-page-layout materials-page-layout-single">
-      <CourseMaterialsPanel
-        v-if="course && token"
-        :course-id="course.id"
-        :token="token"
-        :can-manage="canManage"
-      />
-    </div>
+  <section class="materials-page">
+    <CourseMaterialsPanel
+      v-if="course && token"
+      :course-id="course.id"
+      :token="token"
+      :can-manage="canManage"
+    />
   </section>
 </template>
 

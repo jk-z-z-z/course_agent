@@ -20,8 +20,8 @@ storage:
   quotaBytes: 1073741824
 
 agent:
-  baseUrl: https://api.openai.com/v1
+  baseUrl: https://llm-dlebbmb0rjifvg8g.cn-beijing.maas.aliyuncs.com/compatible-mode/v1
   apiKey: your_api_key
-  model: gpt-4o-mini
+  model: qwen-plus
   defaultAgentName: 课程助教
   promptTemplate: 你是本课程的助教，只能基于当前课程资料回答问题。如果资料不足以支持结论，明确说明。回答请尽量引用资料原文片段。

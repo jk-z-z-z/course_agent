@@ -4,7 +4,7 @@
 
     <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
 
-    <div class="materials-shell" :class="{ collapsed: sidebarCollapsed }">
+    <div class="workspace-split-shell materials-shell" :class="{ 'is-collapsed': sidebarCollapsed }">
       <section class="materials-main-panel">
         <p v-if="!tree.length && !loadingTree" class="muted-copy">当前课程还没有资料。</p>
 
@@ -15,38 +15,37 @@
           :preview-text="previewText"
           :preview-mime-type="previewMimeType"
           :tree="tree"
+          :can-manage="canManage"
+          @rename="renameNode"
+          @download="downloadNode"
         />
       </section>
 
-      <button class="materials-sidebar-toggle" @click="sidebarCollapsed = !sidebarCollapsed">
-        <span class="materials-sidebar-toggle-arrow">{{ sidebarCollapsed ? '‹' : '›' }}</span>
-      </button>
-
-      <aside class="materials-sidebar" :class="{ collapsed: sidebarCollapsed }">
-        <div class="materials-sidebar-body" :class="{ hidden: sidebarCollapsed }">
-          <div class="materials-pane-head">
-            <div>
-              <h4 class="materials-pane-title">资料导航</h4>
-            </div>
-          </div>
-
+      <WorkspaceSidePanel
+        title="资料"
+        :collapsed="sidebarCollapsed"
+        panel-class="materials-sidebar"
+        content-class="materials-tree-panel"
+        expand-label="展开资料列表"
+        collapse-label="收起资料列表"
+        @update:collapsed="sidebarCollapsed = $event"
+      >
+        <template #actions>
           <MaterialsToolbar
             :can-manage="canManage"
             @create-folder="createFolder"
             @upload="openUploader"
           />
+        </template>
 
-          <section class="materials-tree-panel">
-            <MaterialTree
-              :nodes="tree"
-              :selected-id="selectedNodeId"
-              :can-manage="canManage"
-              @select="selectNode"
-              @remove="removeTreeNode"
-            />
-          </section>
-        </div>
-      </aside>
+        <MaterialTree
+          :nodes="tree"
+          :selected-id="selectedNodeId"
+          :can-manage="canManage"
+          @select="selectNode"
+          @remove="removeTreeNode"
+        />
+      </WorkspaceSidePanel>
     </div>
   </article>
 </template>
@@ -56,12 +55,15 @@ import { onBeforeUnmount, ref, watch } from 'vue'
 import MaterialTree from '@/components/MaterialTree.vue'
 import MaterialsDetailPanel from '@/components/MaterialsDetailPanel.vue'
 import MaterialsToolbar from '@/components/MaterialsToolbar.vue'
+import WorkspaceSidePanel from '@/components/WorkspaceSidePanel.vue'
 import {
   createMaterialFolder,
   deleteMaterialNode,
+  downloadMaterial,
   getMaterialDetail,
   getMaterialTree,
   previewMaterial,
+  updateMaterialNode,
   uploadMaterialFile,
 } from '@/api/material'
 import type { MaterialDetailVO, MaterialTreeNodeVO } from '@/types/material'
@@ -195,6 +197,36 @@ async function removeTreeNode(node: MaterialTreeNodeVO) {
     await loadTree()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '资料删除失败'
+  }
+}
+
+async function renameNode(detail: MaterialDetailVO) {
+  if (!props.canManage) return
+  const nodeName = window.prompt('输入新的名称', detail.nodeName)?.trim() ?? ''
+  if (!nodeName || nodeName === detail.nodeName) return
+  try {
+    const updated = await updateMaterialNode(props.token, props.courseId, detail.id, {
+      nodeName,
+    })
+    selectedDetail.value = updated
+    await loadTree()
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '资料重命名失败'
+  }
+}
+
+async function downloadNode(detail: MaterialDetailVO) {
+  if (detail.nodeType !== 'file') return
+  try {
+    const blob = await downloadMaterial(props.token, props.courseId, detail.id)
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = detail.nodeName
+    anchor.click()
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '资料下载失败'
   }
 }
 

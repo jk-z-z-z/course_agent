@@ -134,6 +134,27 @@ func (s *CourseService) ListCourses(ctx context.Context, userID uint64) ([]vo.Co
 	return result, nil
 }
 
+func (s *CourseService) ListDiscoverableCourses(ctx context.Context, userID uint64) ([]vo.CourseVO, error) {
+	courses, err := s.repo.ListActiveCourses(ctx)
+	if err != nil {
+		return nil, err
+	}
+	members, err := s.repo.ListCoursesByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	rolesByCourseID := make(map[uint64]string, len(members))
+	for _, member := range members {
+		rolesByCourseID[member.CourseID] = member.Role
+	}
+
+	result := make([]vo.CourseVO, 0, len(courses))
+	for _, course := range courses {
+		result = append(result, toCourseVO(&course, rolesByCourseID[course.ID]))
+	}
+	return result, nil
+}
+
 func (s *CourseService) GetCourseDetail(ctx context.Context, userID, courseID uint64) (*vo.CourseVO, error) {
 	member, err := s.repo.GetMember(ctx, courseID, userID)
 	if err != nil {
@@ -182,9 +203,7 @@ func (s *CourseService) UpdateCourse(ctx context.Context, userID, courseID uint6
 	if strings.TrimSpace(courseName) != "" {
 		course.CourseName = strings.TrimSpace(courseName)
 	}
-	if strings.TrimSpace(courseDescription) != "" {
-		course.CourseDescription = strings.TrimSpace(courseDescription)
-	}
+	course.CourseDescription = strings.TrimSpace(courseDescription)
 	if err := s.repo.UpdateCourse(ctx, course); err != nil {
 		return nil, err
 	}
@@ -208,6 +227,64 @@ func (s *CourseService) DeleteCourse(ctx context.Context, userID, courseID uint6
 	}
 	course.Status = "deleted"
 	return s.repo.UpdateCourse(ctx, course)
+}
+
+func (s *CourseService) JoinCourse(ctx context.Context, userID, courseID uint64) (*vo.CourseMemberVO, error) {
+	course, err := s.repo.GetCourseByID(ctx, courseID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperrors.ErrCourseNotFound
+		}
+		return nil, err
+	}
+	if course.Status != "active" {
+		return nil, apperrors.ErrCourseNotFound
+	}
+	if course.OwnerUserID == userID {
+		return nil, apperrors.ErrCourseMemberExists
+	}
+
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperrors.ErrUserNotFound
+		}
+		return nil, err
+	}
+	if user.Status != "active" {
+		return nil, apperrors.ErrUserDisabled
+	}
+
+	existing, err := s.repo.GetMember(ctx, courseID, userID)
+	if err == nil {
+		if existing.JoinStatus == "active" {
+			return nil, apperrors.ErrCourseMemberExists
+		}
+		existing.Role = "student"
+		existing.JoinStatus = "active"
+		existing.JoinedAt = time.Now()
+		if err := s.repo.UpdateMember(ctx, existing); err != nil {
+			return nil, err
+		}
+		memberVO := toCourseMemberVO(existing, user.Username)
+		return &memberVO, nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	member := &model.CourseMember{
+		CourseID:   courseID,
+		UserID:     userID,
+		Role:       "student",
+		JoinStatus: "active",
+		JoinedAt:   time.Now(),
+	}
+	if err := s.repo.CreateMember(ctx, member); err != nil {
+		return nil, err
+	}
+	memberVO := toCourseMemberVO(member, user.Username)
+	return &memberVO, nil
 }
 
 func (s *CourseService) ListMembers(ctx context.Context, userID, courseID uint64) ([]vo.CourseMemberVO, error) {

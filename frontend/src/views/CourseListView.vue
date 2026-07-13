@@ -65,7 +65,7 @@
         <div v-else class="course-grid-scroll">
           <p v-if="errorMessage" class="error top-gap">{{ errorMessage }}</p>
           <p v-else-if="!filteredCourses.length && !loadingCourses" class="muted-copy top-gap">
-            当前筛选下还没有课程，先创建一门课程开始使用。
+            当前分类下还没有课程。
           </p>
 
           <div v-else class="course-grid">
@@ -87,7 +87,21 @@
                 </div>
 
                 <div class="inline-actions">
-                  <button class="button primary compact" @click="enterCourse(course.id)">进入课程</button>
+                  <button
+                    v-if="course.myRole"
+                    class="button primary compact"
+                    @click="enterCourse(course.id)"
+                  >
+                    进入课程
+                  </button>
+                  <button
+                    v-else
+                    class="button ghost compact"
+                    @click="joinAndEnterCourse(course.id)"
+                    :disabled="joiningCourseId === course.id"
+                  >
+                    {{ joiningCourseId === course.id ? '加入中' : '加入课程' }}
+                  </button>
                 </div>
               </div>
             </article>
@@ -101,12 +115,12 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { createCourse, listCourses } from '@/api/course'
+import { createCourse, joinCourse, listDiscoverableCourses } from '@/api/course'
 import { useAuth } from '@/composables/useAuth'
 import type { CourseRole, CourseStatus, CourseVO } from '@/types/course'
 import { formatDateTime } from '@/utils/date'
 
-type FilterValue = 'all' | 'joined' | 'managed' | 'owned'
+type FilterValue = 'discover' | 'student' | 'managed' | 'owned'
 
 const router = useRouter()
 const route = useRoute()
@@ -114,9 +128,10 @@ const auth = useAuth()
 const courses = ref<CourseVO[]>([])
 const loadingCourses = ref(false)
 const savingCourse = ref(false)
+const joiningCourseId = ref<number | null>(null)
 const errorMessage = ref('')
 const formError = ref('')
-const activeFilter = ref<FilterValue>('all')
+const activeFilter = ref<FilterValue>('discover')
 const viewMode = ref<'list' | 'create'>('list')
 const courseForm = reactive({
   courseCode: '',
@@ -125,18 +140,18 @@ const courseForm = reactive({
 })
 
 const filters = [
-  { value: 'all' as FilterValue, label: '全部课程' },
-  { value: 'joined' as FilterValue, label: '我参与的' },
+  { value: 'discover' as FilterValue, label: '全局课程' },
+  { value: 'student' as FilterValue, label: '我的课程' },
   { value: 'managed' as FilterValue, label: '我管理的' },
   { value: 'owned' as FilterValue, label: '我创建的' },
 ]
 
 const filteredCourses = computed(() => {
-  if (activeFilter.value === 'joined') {
+  if (activeFilter.value === 'student') {
     return courses.value.filter((course) => course.myRole === 'student')
   }
   if (activeFilter.value === 'managed') {
-    return courses.value.filter((course) => course.myRole === 'owner' || course.myRole === 'teacher')
+    return courses.value.filter((course) => course.myRole === 'teacher')
   }
   if (activeFilter.value === 'owned') {
     return courses.value.filter((course) => course.myRole === 'owner')
@@ -154,7 +169,7 @@ async function loadCourses() {
   loadingCourses.value = true
   errorMessage.value = ''
   try {
-    courses.value = await listCourses(auth.token.value)
+    courses.value = await listDiscoverableCourses(auth.token.value)
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '课程列表加载失败'
   } finally {
@@ -199,7 +214,22 @@ async function submitCourseForm() {
 }
 
 async function enterCourse(courseId: number) {
-  await router.push(`/courses/${courseId}/overview`)
+  await router.push(`/courses/${courseId}/agent`)
+}
+
+async function joinAndEnterCourse(courseId: number) {
+  if (!auth.token.value) return
+  joiningCourseId.value = courseId
+  errorMessage.value = ''
+  try {
+    await joinCourse(auth.token.value, courseId)
+    await loadCourses()
+    await enterCourse(courseId)
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '加入课程失败'
+  } finally {
+    joiningCourseId.value = null
+  }
 }
 
 function maybeOpenCreatePanelFromQuery() {
@@ -222,7 +252,7 @@ function roleLabel(role?: CourseRole) {
     case 'student':
       return '学生'
     default:
-      return '成员'
+      return '未加入'
   }
 }
 

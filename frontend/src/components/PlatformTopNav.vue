@@ -8,15 +8,14 @@
       </span>
     </button>
 
-    <nav v-if="variant !== 'dashboard'" class="platform-top-links">
-      <RouterLink to="/courses" class="platform-link">我的课程</RouterLink>
-      <button class="platform-link ghost-link" type="button" @click="openCreateCourse">创建课程</button>
-      <button class="platform-link ghost-link" type="button" @click="togglePanel('messages')">消息中心</button>
+    <nav class="platform-top-links">
+      <RouterLink to="/courses" class="platform-link">主页</RouterLink>
+      <RouterLink v-if="courseDetailLink" :to="courseDetailLink" class="platform-link">课程详情</RouterLink>
     </nav>
 
-    <div class="platform-top-actions" :class="{ compact: variant === 'dashboard' }">
+    <div class="platform-top-actions" :class="{ compact: props.variant === 'dashboard' }">
       <button
-        v-if="variant !== 'dashboard'"
+        v-if="props.variant !== 'dashboard'"
         class="platform-icon-button"
         type="button"
         aria-label="搜索"
@@ -25,7 +24,7 @@
         <span>⌕</span>
       </button>
       <button
-        v-if="variant !== 'dashboard'"
+        v-if="props.variant !== 'dashboard'"
         class="platform-icon-button has-dot"
         type="button"
         aria-label="通知"
@@ -37,26 +36,26 @@
       <div class="platform-user-menu">
         <button
           class="platform-user-trigger"
-          :class="{ dashboard: variant === 'dashboard' }"
+          :class="{ dashboard: props.variant === 'dashboard' }"
           type="button"
-          @click="toggleMenu"
+          @click="handleUserTrigger"
         >
           <span class="platform-avatar">{{ userInitial }}</span>
           <span class="platform-user-copy">
-            <strong>{{ variant === 'dashboard' ? '个人主页' : auth.user.value?.username || '未登录用户' }}</strong>
-            <small>{{ variant === 'dashboard' ? auth.user.value?.username || '未登录用户' : '教师工作台' }}</small>
+            <strong>{{ props.variant === 'dashboard' ? '退出登录' : auth.user.value?.username || '未登录用户' }}</strong>
+            <small>{{ props.variant === 'dashboard' ? auth.user.value?.username || '未登录用户' : '教师工作台' }}</small>
           </span>
           <span class="platform-caret">⌄</span>
         </button>
 
-        <div v-if="menuOpen" class="platform-user-dropdown">
+        <div v-if="menuOpen && props.variant !== 'dashboard'" class="platform-user-dropdown">
           <button class="platform-dropdown-item" type="button" @click="goCourses">回到课程列表</button>
           <button class="platform-dropdown-item danger" type="button" @click="handleLogout">退出登录</button>
         </div>
       </div>
     </div>
 
-    <div v-if="activePanel && variant !== 'dashboard'" class="platform-floating-panel">
+    <div v-if="activePanel" class="platform-floating-panel">
       <template v-if="activePanel === 'messages'">
         <p class="eyebrow">Messages</p>
         <h3>消息中心</h3>
@@ -80,11 +79,11 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { logout } from '@/api/user'
 import { useAuth } from '@/composables/useAuth'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     variant?: 'default' | 'dashboard'
   }>(),
@@ -94,10 +93,17 @@ withDefaults(
 )
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuth()
 const menuOpen = ref(false)
 const activePanel = ref<'messages' | 'notifications' | 'search' | null>(null)
 const userInitial = computed(() => auth.user.value?.username?.slice(0, 1).toUpperCase() || 'U')
+const courseDetailLink = computed(() => {
+  const courseId = route.params.courseId
+  if (!courseId) return ''
+  const normalizedCourseId = Array.isArray(courseId) ? courseId[0] : courseId
+  return normalizedCourseId ? `/courses/${normalizedCourseId}/overview` : ''
+})
 
 async function goCourses() {
   menuOpen.value = false
@@ -110,15 +116,17 @@ function toggleMenu() {
   menuOpen.value = !menuOpen.value
 }
 
+async function handleUserTrigger() {
+  if (props.variant === 'dashboard') {
+    await handleLogout()
+    return
+  }
+  toggleMenu()
+}
+
 function togglePanel(panel: 'messages' | 'notifications' | 'search') {
   menuOpen.value = false
   activePanel.value = activePanel.value === panel ? null : panel
-}
-
-async function openCreateCourse() {
-  menuOpen.value = false
-  activePanel.value = null
-  await router.push('/courses?create=1')
 }
 
 async function handleLogout() {

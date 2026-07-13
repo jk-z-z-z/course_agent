@@ -142,7 +142,8 @@ func (s *MaterialService) UpdateNode(ctx context.Context, userID, courseID, node
 }
 
 func (s *MaterialService) DeleteNode(ctx context.Context, userID, courseID, nodeID uint64) error {
-	if _, _, err := s.requireCourseManager(ctx, userID, courseID); err != nil {
+	space, _, err := s.requireCourseManager(ctx, userID, courseID)
+	if err != nil {
 		return err
 	}
 	node, err := s.materialRepo.GetActiveNodeByID(ctx, courseID, nodeID)
@@ -158,10 +159,28 @@ func (s *MaterialService) DeleteNode(ctx context.Context, userID, courseID, node
 		return err
 	}
 	toDelete := collectMaterialSubtree(nodes, node.ID)
+	var releasedBytes int64
 	for i := range toDelete {
+		if toDelete[i].NodeType == "file" {
+			releasedBytes += toDelete[i].FileSize
+		}
 		toDelete[i].IsDeleted = true
 	}
-	return s.materialRepo.UpdateNodes(ctx, toDelete)
+	return s.materialRepo.Transaction(ctx, func(tx *gorm.DB) error {
+		if err := s.materialRepo.UpdateNodesTx(tx, toDelete); err != nil {
+			return err
+		}
+		if releasedBytes > 0 {
+			space.UsedBytes -= releasedBytes
+			if space.UsedBytes < 0 {
+				space.UsedBytes = 0
+			}
+			if err := s.materialRepo.UpdateStorageSpaceTx(tx, space); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func (s *MaterialService) UploadFile(ctx context.Context, userID, courseID uint64, parentID *uint64, fileHeader *multipart.FileHeader) (*vo.MaterialDetailVO, error) {

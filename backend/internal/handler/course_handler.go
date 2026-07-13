@@ -55,6 +55,20 @@ func (h *CourseHandler) ListCourses(c *gin.Context) {
 	response.Success(c, courses)
 }
 
+func (h *CourseHandler) ListDiscoverableCourses(c *gin.Context) {
+	userID, ok := authcontext.UserID(c.Request.Context())
+	if !ok || userID == 0 {
+		response.Fail(c, http.StatusUnauthorized, apperrors.ErrUnauthorized.Code, apperrors.ErrUnauthorized.Message)
+		return
+	}
+	courses, err := h.service.ListDiscoverableCourses(c.Request.Context(), userID)
+	if err != nil {
+		h.writeError(c, err)
+		return
+	}
+	response.Success(c, courses)
+}
+
 func (h *CourseHandler) GetCourse(c *gin.Context) {
 	courseID, ok := parseUintParam(c, "courseId")
 	if !ok {
@@ -114,6 +128,25 @@ func (h *CourseHandler) DeleteCourse(c *gin.Context) {
 		return
 	}
 	response.Success(c, nil)
+}
+
+func (h *CourseHandler) JoinCourse(c *gin.Context) {
+	courseID, ok := parseUintParam(c, "courseId")
+	if !ok {
+		response.Fail(c, http.StatusBadRequest, apperrors.ErrInvalidParameter.Code, apperrors.ErrInvalidParameter.Message)
+		return
+	}
+	userID, ok := authcontext.UserID(c.Request.Context())
+	if !ok || userID == 0 {
+		response.Fail(c, http.StatusUnauthorized, apperrors.ErrUnauthorized.Code, apperrors.ErrUnauthorized.Message)
+		return
+	}
+	member, err := h.service.JoinCourse(c.Request.Context(), userID, courseID)
+	if err != nil {
+		h.writeError(c, err)
+		return
+	}
+	response.Success(c, member)
 }
 
 func (h *CourseHandler) ListMembers(c *gin.Context) {
