@@ -25,7 +25,7 @@
             <p class="study-plan-summary-copy">{{ selectedPlan.generatedSummary }}</p>
           </div>
           <div class="study-plan-detail-meta">
-            <span>截止 {{ formatDate(selectedPlan.deadlineDate) }}</span>
+            <span>{{ selectedPlan.items.length }} 天计划</span>
             <span>{{ selectedPlan.dailyMinutes }} 分钟/天</span>
             <span>{{ doneCount }}/{{ selectedPlan.items.length }} 步</span>
           </div>

@@ -80,7 +80,7 @@ func (h *StudyPlanHandler) Generate(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, apperrors.ErrInvalidParameter.Code, apperrors.ErrInvalidParameter.Message)
 		return
 	}
-	data, err := h.service.GeneratePlan(c.Request.Context(), userID, courseID, strings.TrimSpace(req.Goal), strings.TrimSpace(req.DeadlineDate), req.DailyMinutes)
+	data, err := h.service.GeneratePlan(c.Request.Context(), userID, courseID, strings.TrimSpace(req.Goal), req.DailyMinutes)
 	if err != nil {
 		h.writeError(c, err)
 		return
@@ -132,6 +132,8 @@ func (h *StudyPlanHandler) writeError(c *gin.Context, err error) {
 			status = http.StatusForbidden
 		case apperrors.ErrCourseNotFound.Code:
 			status = http.StatusNotFound
+		case apperrors.ErrStudyPlanUnavailable.Code:
+			status = http.StatusServiceUnavailable
 		}
 		response.Fail(c, status, codeErr.Code, codeErr.Message)
 		return

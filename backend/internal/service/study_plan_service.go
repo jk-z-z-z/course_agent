@@ -29,6 +29,8 @@ type StudyPlanService struct {
 	planner       *studyPlanPlanner
 }
 
+const maxGeneratedStudyPlanDays = 60
+
 func NewStudyPlanService(
 	courseRepo *repository.CourseRepository,
 	materialRepo *repository.MaterialRepository,
@@ -68,7 +70,6 @@ func (s *StudyPlanService) ListPlans(ctx context.Context, userID, courseID uint6
 			CourseID:         plan.CourseID,
 			UserID:           plan.UserID,
 			Goal:             plan.Goal,
-			DeadlineDate:     plan.DeadlineDate,
 			DailyMinutes:     plan.DailyMinutes,
 			Status:           plan.Status,
 			GeneratedSummary: plan.GeneratedSummary,
@@ -98,24 +99,12 @@ func (s *StudyPlanService) GetPlan(ctx context.Context, userID, courseID, planID
 	return s.loadPlanVO(ctx, plan)
 }
 
-func (s *StudyPlanService) GeneratePlan(ctx context.Context, userID, courseID uint64, goal, deadlineDate string, dailyMinutes int) (*vo.StudyPlanVO, error) {
+func (s *StudyPlanService) GeneratePlan(ctx context.Context, userID, courseID uint64, goal string, dailyMinutes int) (*vo.StudyPlanVO, error) {
 	if _, err := s.requireActiveCourseMember(ctx, userID, courseID); err != nil {
 		return nil, err
 	}
 	trimmedGoal := strings.TrimSpace(goal)
 	if trimmedGoal == "" || dailyMinutes < 15 || dailyMinutes > 480 {
-		return nil, apperrors.ErrInvalidParameter
-	}
-	deadline, err := time.ParseInLocation("2006-01-02", strings.TrimSpace(deadlineDate), time.Local)
-	if err != nil {
-		return nil, apperrors.ErrInvalidParameter
-	}
-	today := dateOnly(time.Now())
-	if deadline.Before(today) {
-		return nil, apperrors.ErrInvalidParameter
-	}
-	totalDays := int(deadline.Sub(today).Hours()/24) + 1
-	if totalDays <= 0 || totalDays > 180 {
 		return nil, apperrors.ErrInvalidParameter
 	}
 
@@ -126,20 +115,23 @@ func (s *StudyPlanService) GeneratePlan(ctx context.Context, userID, courseID ui
 
 	result, planErr := s.planner.Generate(ctx, studyPlanGenerationInput{
 		Goal:         trimmedGoal,
-		DeadlineDate: deadline,
 		DailyMinutes: dailyMinutes,
 		Materials:    materials,
 	})
 	if planErr != nil {
-		log.Printf("study plan generation fallback: course_id=%d user_id=%d err=%v", courseID, userID, planErr)
-		result = buildFallbackStudyPlan(trimmedGoal, deadline, dailyMinutes, materials)
+		log.Printf("study plan generation failed: course_id=%d user_id=%d err=%v", courseID, userID, planErr)
+		return nil, apperrors.ErrStudyPlanUnavailable
 	}
+	if len(result.Items) == 0 {
+		return nil, apperrors.ErrStudyPlanUnavailable
+	}
+	endDate := result.Items[len(result.Items)-1].PlanDate
 
 	planModel := &model.StudyPlan{
 		CourseID:         courseID,
 		UserID:           userID,
 		Goal:             trimmedGoal,
-		DeadlineDate:     deadline,
+		DeadlineDate:     endDate,
 		DailyMinutes:     dailyMinutes,
 		Status:           "active",
 		GeneratedSummary: strings.TrimSpace(result.Summary),
@@ -241,7 +233,6 @@ func (s *StudyPlanService) loadPlanVO(ctx context.Context, plan *model.StudyPlan
 		CourseID:         plan.CourseID,
 		UserID:           plan.UserID,
 		Goal:             plan.Goal,
-		DeadlineDate:     plan.DeadlineDate,
 		DailyMinutes:     plan.DailyMinutes,
 		Status:           plan.Status,
 		GeneratedSummary: plan.GeneratedSummary,
@@ -325,7 +316,6 @@ func NewStudyPlanPlanner(baseURL, apiKey, model string) *studyPlanPlanner {
 
 type studyPlanGenerationInput struct {
 	Goal         string
-	DeadlineDate time.Time
 	DailyMinutes int
 	Materials    []studyPlanMaterialContext
 }
@@ -362,7 +352,7 @@ func (p *studyPlanPlanner) Generate(ctx context.Context, input studyPlanGenerati
 }
 
 func (p *studyPlanPlanner) requestPlan(ctx context.Context, input studyPlanGenerationInput) (string, error) {
-	systemPrompt := "你是课程学习计划助手。你只能基于用户目标和当前课程资料制定学习计划。请输出 JSON 对象，格式为 {\"summary\":\"...\",\"items\":[{\"dayIndex\":1,\"title\":\"...\",\"tasksText\":\"...\",\"suggestedMinutes\":60,\"materialNodeIds\":[1,2]}]}。不要输出 Markdown。不要输出代码块。"
+	systemPrompt := "你是课程学习计划助手。你只能基于用户目标、每日可用时间和当前课程资料制定学习计划。请自行判断合理的计划天数，并输出 JSON 对象，格式为 {\"summary\":\"...\",\"items\":[{\"dayIndex\":1,\"title\":\"...\",\"tasksText\":\"...\",\"suggestedMinutes\":60,\"materialNodeIds\":[1,2]}]}。dayIndex 必须从 1 开始连续递增。不要输出 Markdown。不要输出代码块。"
 	userPrompt := buildStudyPlanPrompt(input)
 	payload := map[string]any{
 		"model": p.model,
@@ -414,11 +404,9 @@ func buildStudyPlanPrompt(input studyPlanGenerationInput) string {
 	var builder strings.Builder
 	builder.WriteString("学习目标：")
 	builder.WriteString(input.Goal)
-	builder.WriteString("\n截止日期：")
-	builder.WriteString(input.DeadlineDate.Format("2006-01-02"))
 	builder.WriteString("\n每日可用时间（分钟）：")
 	builder.WriteString(fmt.Sprintf("%d", input.DailyMinutes))
-	builder.WriteString("\n请从今天开始按天安排任务。")
+	builder.WriteString("\n请从今天开始按天安排任务。请根据目标复杂度、课程资料数量和每日可用时间自行决定计划总天数，最多不要超过 60 天。")
 	if len(input.Materials) > 0 {
 		builder.WriteString("\n当前课程资料：")
 		for _, material := range input.Materials {
@@ -459,15 +447,14 @@ func parseStudyPlanResult(raw string, input studyPlanGenerationInput) (studyPlan
 		return studyPlanGenerationResult{}, fmt.Errorf("planner output has no items")
 	}
 	today := dateOnly(time.Now())
-	maxDays := int(input.DeadlineDate.Sub(today).Hours()/24) + 1
 	result := studyPlanGenerationResult{Summary: strings.TrimSpace(parsed.Summary)}
 	for index, item := range parsed.Items {
+		if index >= maxGeneratedStudyPlanDays {
+			break
+		}
 		dayIndex := item.DayIndex
 		if dayIndex <= 0 {
 			dayIndex = index + 1
-		}
-		if dayIndex > maxDays {
-			break
 		}
 		title := strings.TrimSpace(item.Title)
 		if title == "" {
@@ -496,59 +483,9 @@ func parseStudyPlanResult(raw string, input studyPlanGenerationInput) (studyPlan
 	return normalizeStudyPlanResult(result, input), nil
 }
 
-func buildFallbackStudyPlan(goal string, deadline time.Time, dailyMinutes int, materials []studyPlanMaterialContext) studyPlanGenerationResult {
-	totalDays := int(deadline.Sub(dateOnly(time.Now())).Hours()/24) + 1
-	result := studyPlanGenerationResult{
-		Summary: "已根据学习目标、截止时间和每日可用时间生成学习计划。",
-		Items:   make([]studyPlanGeneratedItem, 0, totalDays),
-	}
-	for dayIndex := 1; dayIndex <= totalDays; dayIndex++ {
-		var title string
-		switch {
-		case dayIndex == 1:
-			title = "梳理目标与资料"
-		case dayIndex == totalDays:
-			title = "集中复盘与查漏补缺"
-		case dayIndex*100/totalDays <= 60:
-			title = "推进核心内容学习"
-		case dayIndex*100/totalDays <= 85:
-			title = "巩固理解与整理笔记"
-		default:
-			title = "复习重点与自测"
-		}
-		referenced := selectMaterialIDsForDay(materials, dayIndex)
-		taskLines := []string{fmt.Sprintf("围绕“%s”完成当天学习。", goal)}
-		if len(referenced) > 0 {
-			taskLines = append(taskLines, "优先阅读并整理当天关联资料。")
-		}
-		if dayIndex == totalDays {
-			taskLines = append(taskLines, "回顾前几天笔记，总结薄弱点并完成一次整体复盘。")
-		} else {
-			taskLines = append(taskLines, "记录关键概念、疑问点和需要复习的内容。")
-		}
-		result.Items = append(result.Items, studyPlanGeneratedItem{
-			DayIndex:         dayIndex,
-			PlanDate:         dateOnly(time.Now()).AddDate(0, 0, dayIndex-1),
-			Title:            title,
-			TasksText:        strings.Join(taskLines, " "),
-			SuggestedMinutes: dailyMinutes,
-			MaterialNodeIDs:  referenced,
-		})
-	}
-	return normalizeStudyPlanResult(result, studyPlanGenerationInput{
-		Goal:         goal,
-		DeadlineDate: deadline,
-		DailyMinutes: dailyMinutes,
-		Materials:    materials,
-	})
-}
-
 func normalizeStudyPlanResult(result studyPlanGenerationResult, input studyPlanGenerationInput) studyPlanGenerationResult {
 	today := dateOnly(time.Now())
-	maxDays := int(input.DeadlineDate.Sub(today).Hours()/24) + 1
-	if maxDays <= 0 {
-		maxDays = len(result.Items)
-	}
+	maxDays := min(len(result.Items), maxGeneratedStudyPlanDays)
 	normalized := studyPlanGenerationResult{
 		Summary: strings.TrimSpace(result.Summary),
 		Items:   make([]studyPlanGeneratedItem, 0, maxDays),
@@ -582,33 +519,7 @@ func normalizeStudyPlanResult(result studyPlanGenerationResult, input studyPlanG
 			MaterialNodeIDs:  uniqueMaterialIDs(item.MaterialNodeIDs),
 		})
 	}
-	for len(normalized.Items) < maxDays {
-		dayIndex := len(normalized.Items) + 1
-		normalized.Items = append(normalized.Items, studyPlanGeneratedItem{
-			DayIndex:         dayIndex,
-			PlanDate:         today.AddDate(0, 0, dayIndex-1),
-			Title:            fmt.Sprintf("第 %d 天学习任务", dayIndex),
-			TasksText:        "根据当前学习目标继续推进学习，并整理当天重点与疑问。",
-			SuggestedMinutes: input.DailyMinutes,
-			MaterialNodeIDs:  selectMaterialIDsForDay(input.Materials, dayIndex),
-		})
-	}
 	return normalized
-}
-
-func selectMaterialIDsForDay(materials []studyPlanMaterialContext, dayIndex int) []uint64 {
-	if len(materials) == 0 {
-		return nil
-	}
-	first := materials[(dayIndex-1)%len(materials)].MaterialNodeID
-	result := []uint64{first}
-	if len(materials) > 1 && dayIndex%2 == 0 {
-		second := materials[dayIndex%len(materials)].MaterialNodeID
-		if second != first {
-			result = append(result, second)
-		}
-	}
-	return result
 }
 
 func uniqueMaterialIDs(ids []uint64) []uint64 {

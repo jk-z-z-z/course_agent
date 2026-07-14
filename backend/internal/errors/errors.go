@@ -36,6 +36,7 @@ var (
 	ErrUserDisabled         = New(44001, "用户已被禁用")
 	ErrAgentDisabled        = New(44002, "Agent 已禁用")
 	ErrAgentUnavailable     = New(45001, "Agent 当前不可用")
+	ErrStudyPlanUnavailable = New(45002, "学习计划生成服务当前不可用")
 )
 
 func Wrap(code int, message string, err error) error {

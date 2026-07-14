@@ -2,7 +2,6 @@ package dto
 
 type GenerateStudyPlanRequest struct {
 	Goal         string `json:"goal"`
-	DeadlineDate string `json:"deadlineDate"`
 	DailyMinutes int    `json:"dailyMinutes"`
 }
 

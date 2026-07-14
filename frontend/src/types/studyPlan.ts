@@ -20,7 +20,6 @@ export interface StudyPlanVO {
   courseId: number
   userId: number
   goal: string
-  deadlineDate: string
   dailyMinutes: number
   status: StudyPlanStatus
   generatedSummary: string
@@ -34,7 +33,6 @@ export interface StudyPlanSummaryVO {
   courseId: number
   userId: number
   goal: string
-  deadlineDate: string
   dailyMinutes: number
   status: StudyPlanStatus
   generatedSummary: string
@@ -46,6 +44,5 @@ export interface StudyPlanSummaryVO {
 
 export interface GenerateStudyPlanPayload {
   goal: string
-  deadlineDate: string
   dailyMinutes: number
 }

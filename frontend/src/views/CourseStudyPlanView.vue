@@ -19,7 +19,7 @@
           <span class="study-plan-card-title">{{ plan.goal }}</span>
           <span class="study-plan-card-summary">{{ plan.generatedSummary || '已生成学习步骤，进入后查看执行安排。' }}</span>
           <span class="study-plan-card-meta">
-            <span>截止 {{ formatDate(plan.deadlineDate) }}</span>
+            <span>{{ plan.itemCount }} 天计划</span>
             <span>{{ plan.dailyMinutes }} 分钟/天</span>
           </span>
           <span class="study-plan-card-footer">
@@ -50,11 +50,6 @@
           </label>
 
           <div class="study-plan-form-grid">
-            <label class="field">
-              <span>截止时间</span>
-              <input v-model="planForm.deadlineDate" type="date" />
-            </label>
-
             <label class="field">
               <span>每日可用时间（分钟）</span>
               <input v-model.number="planForm.dailyMinutes" type="number" min="15" max="480" step="15" />
@@ -94,7 +89,6 @@ const loadError = ref('')
 const actionError = ref('')
 const planForm = reactive({
   goal: '',
-  deadlineDate: defaultDeadlineDate(),
   dailyMinutes: 60,
 })
 
@@ -124,7 +118,6 @@ async function handleGeneratePlan() {
   try {
     const plan = await generateStudyPlan(token.value, course.value.id, {
       goal: planForm.goal,
-      deadlineDate: planForm.deadlineDate,
       dailyMinutes: planForm.dailyMinutes,
     })
     createDialogOpen.value = false
@@ -153,18 +146,6 @@ function closeCreateDialog() {
 
 function resetPlanForm() {
   planForm.goal = ''
-  planForm.deadlineDate = defaultDeadlineDate()
   planForm.dailyMinutes = 60
-}
-
-function defaultDeadlineDate() {
-  const date = new Date()
-  date.setDate(date.getDate() + 14)
-  return date.toISOString().slice(0, 10)
-}
-
-function formatDate(value: string) {
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('zh-CN')
 }
 </script>

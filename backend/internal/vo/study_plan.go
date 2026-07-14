@@ -21,7 +21,6 @@ type StudyPlanVO struct {
 	CourseID         uint64            `json:"courseId"`
 	UserID           uint64            `json:"userId"`
 	Goal             string            `json:"goal"`
-	DeadlineDate     time.Time         `json:"deadlineDate"`
 	DailyMinutes     int               `json:"dailyMinutes"`
 	Status           string            `json:"status"`
 	GeneratedSummary string            `json:"generatedSummary"`
@@ -35,7 +34,6 @@ type StudyPlanSummaryVO struct {
 	CourseID         uint64    `json:"courseId"`
 	UserID           uint64    `json:"userId"`
 	Goal             string    `json:"goal"`
-	DeadlineDate     time.Time `json:"deadlineDate"`
 	DailyMinutes     int       `json:"dailyMinutes"`
 	Status           string    `json:"status"`
 	GeneratedSummary string    `json:"generatedSummary"`
