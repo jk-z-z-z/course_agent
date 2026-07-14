@@ -72,6 +72,8 @@ func New(cfg *config.Config) (*App, error) {
 		&model.AgentConversation{},
 		&model.AgentMessage{},
 		&model.AgentMessageSource{},
+		&model.StudyPlan{},
+		&model.StudyPlanItem{},
 	); err != nil {
 		_ = redisClient.Close()
 		_ = mysqlClient.Close()
@@ -86,6 +88,7 @@ func New(cfg *config.Config) (*App, error) {
 	courseRepo := repository.NewCourseRepository(mysqlClient.DB)
 	materialRepo := repository.NewMaterialRepository(mysqlClient.DB)
 	agentRepo := repository.NewAgentRepository(mysqlClient.DB)
+	studyPlanRepo := repository.NewStudyPlanRepository(mysqlClient.DB)
 	courseService := service.NewCourseService(
 		courseRepo,
 		userRepo,
@@ -111,8 +114,15 @@ func New(cfg *config.Config) (*App, error) {
 	}
 	agentService := service.NewAgentService(courseRepo, agentRepo, materialRepo, agentRuntime)
 	agentHandler := handler.NewAgentHandler(agentService)
+	studyPlanService := service.NewStudyPlanService(
+		courseRepo,
+		materialRepo,
+		studyPlanRepo,
+		service.NewStudyPlanPlanner(cfg.Agent.BaseURL, cfg.Agent.APIKey, cfg.Agent.Model),
+	)
+	studyPlanHandler := handler.NewStudyPlanHandler(studyPlanService)
 
-	engine := router.New(userHandler, courseHandler, materialHandler, agentHandler, authMiddleware, cfg.Server.Mode)
+	engine := router.New(userHandler, courseHandler, materialHandler, agentHandler, studyPlanHandler, authMiddleware, cfg.Server.Mode)
 	addr := net.JoinHostPort(cfg.Server.Host, fmt.Sprintf("%d", cfg.Server.Port))
 	server := &http.Server{
 		Addr:              addr,

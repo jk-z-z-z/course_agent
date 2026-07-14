@@ -7,6 +7,7 @@ import (
 	"io"
 	"mime"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -245,6 +246,7 @@ func (s *MaterialService) UploadFile(ctx context.Context, userID, courseID uint6
 	if err := saveUploadedFile(fileHeader, storagePath); err != nil {
 		return nil, err
 	}
+	mimeType = detectStoredMimeType(storagePath, originalName, mimeType)
 
 	var nodeResult *model.CourseMaterialNode
 	err = s.materialRepo.Transaction(ctx, func(tx *gorm.DB) error {
@@ -458,6 +460,85 @@ func toMaterialDetailVO(node *model.CourseMaterialNode) vo.MaterialDetailVO {
 		CreatedAt:       node.CreatedAt,
 		UpdatedAt:       node.UpdatedAt,
 	}
+}
+
+func detectStoredMimeType(storagePath, fileName, uploadedMime string) string {
+	if detected := mimeTypeByFileName(fileName); detected != "" {
+		return detected
+	}
+	normalized := strings.TrimSpace(uploadedMime)
+	if normalized != "" && normalized != "application/octet-stream" {
+		return normalized
+	}
+	file, err := os.Open(storagePath)
+	if err != nil {
+		if normalized != "" {
+			return normalized
+		}
+		return "application/octet-stream"
+	}
+	defer file.Close()
+
+	buffer := make([]byte, 512)
+	n, err := file.Read(buffer)
+	if err != nil && !errors.Is(err, io.EOF) {
+		if normalized != "" {
+			return normalized
+		}
+		return "application/octet-stream"
+	}
+	if n > 0 {
+		return httpDetectContentType(buffer[:n])
+	}
+	if normalized != "" {
+		return normalized
+	}
+	return "application/octet-stream"
+}
+
+func mimeTypeByFileName(fileName string) string {
+	ext := strings.TrimPrefix(strings.ToLower(filepath.Ext(fileName)), ".")
+	switch ext {
+	case "txt", "log":
+		return "text/plain; charset=utf-8"
+	case "md", "markdown":
+		return "text/markdown; charset=utf-8"
+	case "csv":
+		return "text/csv; charset=utf-8"
+	case "json":
+		return "application/json"
+	case "yaml", "yml":
+		return "application/x-yaml; charset=utf-8"
+	case "xml":
+		return "application/xml"
+	case "html", "htm":
+		return "text/html; charset=utf-8"
+	case "css":
+		return "text/css; charset=utf-8"
+	case "js", "mjs":
+		return "text/javascript; charset=utf-8"
+	case "ts", "tsx", "jsx", "go", "java", "py", "rs", "c", "cpp", "h", "hpp", "sql", "sh":
+		return "text/plain; charset=utf-8"
+	case "svg":
+		return "image/svg+xml"
+	case "doc":
+		return "application/msword"
+	case "docx":
+		return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+	case "xls":
+		return "application/vnd.ms-excel"
+	case "xlsx":
+		return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	case "ppt":
+		return "application/vnd.ms-powerpoint"
+	case "pptx":
+		return "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+	}
+	return strings.TrimSpace(mime.TypeByExtension(filepath.Ext(fileName)))
+}
+
+func httpDetectContentType(data []byte) string {
+	return strings.TrimSpace(http.DetectContentType(data))
 }
 
 func saveUploadedFile(fileHeader *multipart.FileHeader, storagePath string) error {

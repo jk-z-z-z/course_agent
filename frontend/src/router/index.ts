@@ -34,6 +34,16 @@ const routes = [
             component: () => import('@/views/CourseMembersView.vue'),
           },
           {
+            path: 'study-plan',
+            name: 'course-study-plan',
+            component: () => import('@/views/CourseStudyPlanView.vue'),
+          },
+          {
+            path: 'study-plan/:planId',
+            name: 'course-study-plan-detail',
+            component: () => import('@/views/CourseStudyPlanDetailView.vue'),
+          },
+          {
             path: 'materials',
             name: 'course-materials',
             component: () => import('@/views/CourseMaterialsView.vue'),

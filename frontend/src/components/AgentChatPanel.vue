@@ -41,16 +41,17 @@
         <label class="agent-input-field">
           <textarea
             :value="question"
-            placeholder="输入你的问题，Enter 发送，Shift + Enter 换行"
+            placeholder="给课程 Agent 发送消息"
             rows="1"
             :disabled="disabled"
             @input="$emit('update:question', ($event.target as HTMLTextAreaElement).value)"
             @keydown.enter.exact.prevent="$emit('submit-question')"
           />
+          <button class="agent-send-button" type="submit" :disabled="disabled" :title="disabledReason">
+            <span aria-hidden="true">↑</span>
+            <span class="sr-only">{{ sendingQuestion ? '生成中' : '发送' }}</span>
+          </button>
         </label>
-        <button class="agent-send-button" type="submit" :disabled="disabled" :title="disabledReason">
-          {{ sendingQuestion ? '生成中' : '发送' }}
-        </button>
       </form>
     </div>
   </section>

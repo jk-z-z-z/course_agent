@@ -47,11 +47,46 @@
         />
       </WorkspaceSidePanel>
     </div>
+
+    <div v-if="folderDialogOpen" class="modal-backdrop" @click.self="closeFolderDialog">
+      <section class="modal-card card materials-folder-modal">
+        <div class="section-head">
+          <div>
+            <h3>新建文件夹</h3>
+          </div>
+          <button class="button ghost compact" type="button" @click="closeFolderDialog">关闭</button>
+        </div>
+
+        <form class="form" @submit.prevent="submitCreateFolder">
+          <label class="field">
+            <span>父文件夹</span>
+            <select v-model="folderForm.parentId">
+              <option value="">课程根目录</option>
+              <option v-for="option in folderOptions" :key="option.id" :value="String(option.id)">
+                {{ option.label }}
+              </option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>文件夹名称</span>
+            <input v-model.trim="folderForm.folderName" type="text" placeholder="输入文件夹名称" />
+          </label>
+
+          <p v-if="folderFormError" class="error">{{ folderFormError }}</p>
+
+          <div class="inline-actions">
+            <button class="button primary" type="submit">确认创建</button>
+            <button class="button ghost" type="button" @click="closeFolderDialog">取消</button>
+          </div>
+        </form>
+      </section>
+    </div>
   </article>
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import MaterialTree from '@/components/MaterialTree.vue'
 import MaterialsDetailPanel from '@/components/MaterialsDetailPanel.vue'
 import MaterialsToolbar from '@/components/MaterialsToolbar.vue'
@@ -85,6 +120,14 @@ const sidebarCollapsed = ref(false)
 const previewUrl = ref('')
 const previewText = ref('')
 const previewMimeType = ref('')
+const folderDialogOpen = ref(false)
+const folderFormError = ref('')
+const folderForm = reactive({
+  parentId: '',
+  folderName: '',
+})
+
+const folderOptions = computed(() => flattenFolderOptions(tree.value))
 
 async function loadTree() {
   loadingTree.value = true
@@ -134,8 +177,9 @@ async function loadInlinePreview() {
     const blob = await previewMaterial(props.token, props.courseId, selectedDetail.value.id)
     previewMimeType.value = blob.type || selectedDetail.value.mimeType || ''
 
-    if (previewMimeType.value.startsWith('text/') || isCodeLikeFile(selectedDetail.value.fileExt)) {
-      previewText.value = await blob.text()
+    if (shouldReadAsText(selectedDetail.value.fileExt, previewMimeType.value)) {
+      const rawText = await blob.text()
+      previewText.value = formatPreviewText(rawText, selectedDetail.value.fileExt, previewMimeType.value)
     } else {
       previewUrl.value = URL.createObjectURL(blob)
     }
@@ -148,19 +192,38 @@ async function loadInlinePreview() {
 
 async function createFolder() {
   if (!props.canManage) return
-  const folderName = window.prompt('输入文件夹名称')?.trim() ?? ''
-  if (!folderName) return
+  const currentFolderId = currentFolderTargetId()
+  folderForm.parentId = typeof currentFolderId === 'number' ? String(currentFolderId) : ''
+  folderForm.folderName = ''
+  folderFormError.value = ''
+  folderDialogOpen.value = true
+}
+
+async function submitCreateFolder() {
+  if (!props.canManage) return
+  const folderName = folderForm.folderName.trim()
+  if (!folderName) {
+    folderFormError.value = '请输入文件夹名称'
+    return
+  }
+  const parentId = folderForm.parentId ? Number(folderForm.parentId) : undefined
   try {
     const created = await createMaterialFolder(props.token, props.courseId, {
-      parentId: currentFolderTargetId(),
+      parentId,
       folderName,
     })
+    closeFolderDialog()
     await loadTree()
     const createdNode = findNodeById(tree.value, created.id)
     if (createdNode) await selectNode(createdNode)
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '文件夹创建失败'
+    folderFormError.value = error instanceof Error ? error.message : '文件夹创建失败'
   }
+}
+
+function closeFolderDialog() {
+  folderDialogOpen.value = false
+  folderFormError.value = ''
 }
 
 function openUploader() {
@@ -263,11 +326,77 @@ function findNodeById(nodes: MaterialTreeNodeVO[], id: number): MaterialTreeNode
   return null
 }
 
-function isCodeLikeFile(fileExt?: string) {
-  if (!fileExt) return false
-  return ['txt', 'md', 'json', 'js', 'ts', 'tsx', 'jsx', 'css', 'scss', 'html', 'xml', 'yml', 'yaml'].includes(
-    fileExt.toLowerCase(),
-  )
+function flattenFolderOptions(nodes: MaterialTreeNodeVO[], depth = 0): Array<{ id: number; label: string }> {
+  const result: Array<{ id: number; label: string }> = []
+  for (const node of nodes) {
+    if (node.type !== 'folder') continue
+    result.push({
+      id: node.id,
+      label: `${'　'.repeat(depth)}${node.name}`,
+    })
+    if (node.children?.length) {
+      result.push(...flattenFolderOptions(node.children, depth + 1))
+    }
+  }
+  return result
+}
+
+function shouldReadAsText(fileExt?: string, mimeType?: string) {
+  const ext = normalizeFileExt(fileExt)
+  const mime = normalizeMimeType(mimeType)
+  if (ext === 'html' || ext === 'htm' || ext === 'svg') return false
+  if (mime === 'text/html' || mime === 'image/svg+xml') return false
+  if (mime.startsWith('text/')) return true
+  if (['application/json', 'application/xml', 'application/x-yaml', 'application/yaml'].includes(mime)) return true
+  return [
+    'txt',
+    'log',
+    'md',
+    'markdown',
+    'csv',
+    'json',
+    'js',
+    'mjs',
+    'ts',
+    'tsx',
+    'jsx',
+    'css',
+    'scss',
+    'xml',
+    'yml',
+    'yaml',
+    'go',
+    'java',
+    'py',
+    'rs',
+    'c',
+    'cpp',
+    'h',
+    'hpp',
+    'sql',
+    'sh',
+  ].includes(ext)
+}
+
+function formatPreviewText(text: string, fileExt?: string, mimeType?: string) {
+  const ext = normalizeFileExt(fileExt)
+  const mime = normalizeMimeType(mimeType)
+  if (ext === 'json' || mime === 'application/json') {
+    try {
+      return JSON.stringify(JSON.parse(text), null, 2)
+    } catch {
+      return text
+    }
+  }
+  return text
+}
+
+function normalizeFileExt(fileExt?: string) {
+  return (fileExt ?? '').trim().replace(/^\./, '').toLowerCase()
+}
+
+function normalizeMimeType(mimeType?: string) {
+  return (mimeType ?? '').split(';')[0].trim().toLowerCase()
 }
 
 onBeforeUnmount(() => {

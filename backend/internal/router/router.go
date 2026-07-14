@@ -10,7 +10,7 @@ import (
 	"course_agent_backend/internal/middleware"
 )
 
-func New(userHandler *handler.UserHandler, courseHandler *handler.CourseHandler, materialHandler *handler.MaterialHandler, agentHandler *handler.AgentHandler, auth *middleware.AuthMiddleware, mode string) *gin.Engine {
+func New(userHandler *handler.UserHandler, courseHandler *handler.CourseHandler, materialHandler *handler.MaterialHandler, agentHandler *handler.AgentHandler, studyPlanHandler *handler.StudyPlanHandler, auth *middleware.AuthMiddleware, mode string) *gin.Engine {
 	if mode == "release" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -67,6 +67,10 @@ func New(userHandler *handler.UserHandler, courseHandler *handler.CourseHandler,
 		courses.GET("/:courseId/agent/conversations/:conversationId", agentHandler.GetConversation)
 		courses.POST("/:courseId/agent/ask", agentHandler.Ask)
 		courses.POST("/:courseId/agent/ask/stream", agentHandler.AskStream)
+		courses.GET("/:courseId/study-plans", studyPlanHandler.List)
+		courses.POST("/:courseId/study-plans/generate", studyPlanHandler.Generate)
+		courses.GET("/:courseId/study-plans/:planId", studyPlanHandler.GetDetail)
+		courses.PATCH("/:courseId/study-plans/:planId/items/:itemId", studyPlanHandler.UpdateItem)
 	}
 
 	return r

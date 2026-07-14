@@ -32,6 +32,7 @@ const props = defineProps<{
 
 const items = computed(() => [
   { to: `/courses/${props.courseId}/agent`, label: '对话', icon: '◌' },
+  { to: `/courses/${props.courseId}/study-plan`, label: '计划', icon: '◫' },
   { to: `/courses/${props.courseId}/materials`, label: '资料', icon: '▤' },
   { to: `/courses/${props.courseId}/members`, label: '成员', icon: '◎' },
   { to: `/courses/${props.courseId}/overview`, label: '详情', icon: '◧' },

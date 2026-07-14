@@ -4,29 +4,35 @@
       <button
         class="tree-node"
         :class="{ active: node.id === selectedId }"
-        @click="$emit('select', node)"
+        type="button"
+        @click="handleNodeClick(node)"
       >
+        <span
+          v-if="node.type === 'folder'"
+          class="tree-node-caret"
+          :class="{ expanded: isExpanded(node) }"
+          aria-hidden="true"
+        />
+        <span v-else class="tree-node-caret placeholder" aria-hidden="true" />
         <span class="tree-node-label">
-          <span class="tree-node-icon" :class="node.type === 'folder' ? 'folder' : 'file'">
-            {{ node.type === 'folder' ? 'F' : 'D' }}
-          </span>
+          <span class="tree-node-icon" :class="node.type === 'folder' ? 'folder' : 'file'" aria-hidden="true" />
           <span class="tree-node-name">
             <strong>{{ node.name }}</strong>
-            <small>{{ node.type === 'file' ? '文件节点' : '目录节点' }}</small>
           </span>
         </span>
-        <span class="tree-node-meta">{{ node.type === 'file' ? formatFileSize(node.fileSize ?? 0) : `${node.children?.length ?? 0} 项` }}</span>
       </button>
 
       <button
         v-if="canManage"
         class="tree-node-delete"
+        type="button"
+        title="删除"
         @click.stop="$emit('remove', node)"
       >
-        删除
+        ×
       </button>
 
-      <div v-if="node.children?.length" class="tree-children">
+      <div v-if="node.children?.length && isExpanded(node)" class="tree-children">
         <MaterialTree
           :nodes="node.children"
           :selected-id="selectedId"
@@ -40,24 +46,57 @@
 </template>
 
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import type { MaterialTreeNodeVO } from '@/types/material'
 
 defineOptions({ name: 'MaterialTree' })
 
-defineProps<{
+const props = defineProps<{
   nodes: MaterialTreeNodeVO[]
   selectedId?: number | null
   canManage: boolean
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   select: [node: MaterialTreeNodeVO]
   remove: [node: MaterialTreeNodeVO]
 }>()
 
-function formatFileSize(size: number) {
-  if (size < 1024) return `${size} B`
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
-  return `${(size / (1024 * 1024)).toFixed(1)} MB`
+const expandedIds = ref<Set<number>>(new Set())
+
+watch(
+  () => props.nodes,
+  (nodes) => {
+    const next = new Set(expandedIds.value)
+    addFolderIds(nodes, next)
+    expandedIds.value = next
+  },
+  { immediate: true },
+)
+
+function handleNodeClick(node: MaterialTreeNodeVO) {
+  emit('select', node)
+  if (node.type !== 'folder' || !node.children?.length) return
+  const next = new Set(expandedIds.value)
+  if (next.has(node.id)) {
+    next.delete(node.id)
+  } else {
+    next.add(node.id)
+  }
+  expandedIds.value = next
+}
+
+function isExpanded(node: MaterialTreeNodeVO) {
+  return node.type === 'folder' && expandedIds.value.has(node.id)
+}
+
+function addFolderIds(nodes: MaterialTreeNodeVO[], target: Set<number>) {
+  for (const node of nodes) {
+    if (node.type !== 'folder') continue
+    target.add(node.id)
+    if (node.children?.length) {
+      addFolderIds(node.children, target)
+    }
+  }
 }
 </script>
